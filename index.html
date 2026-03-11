@@ -1,4 +1,27 @@
-import { useState } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Needle Movement Simulator — Bigabid Q2 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #F0F3F7; font-family: 'Poppins', sans-serif; }
+    input[type=range] { cursor: pointer; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f0f0f0; }
+    ::-webkit-scrollbar-thumb { background: #1B365C44; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+
 
 const B = {
   nightBlue:    "#1B365C",
@@ -866,7 +889,7 @@ function PWBPanel({ scenario }) {
 }
 
 // ── Main App ──────────────────────────────────────────────────────────────
-export default function NeedleSimulator() {
+function NeedleSimulator() {
   const [tab,      setTab]      = useState("rt");
   const [scenario, setScenario] = useState("mostLikely");
 
@@ -996,3 +1019,9 @@ export default function NeedleSimulator() {
     </div>
   );
 }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<NeedleSimulator />);
+  </script>
+</body>
+</html>
