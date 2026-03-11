@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Needle Movement Simulator — Bigabid Q2 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #F0F3F7; font-family: 'Poppins', sans-serif; }
+    input[type=range] { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+
+
+const B = {
+  nightBlue:    "#1B365C",
+  silverLining: "#D1D6DE",
+  livingCoral:  "#FA5959",
+  white:        "#FFFFFF",
+  secureYellow: "#FFDF84",
+  skyBlue:      "#B6D4FF",
+  surfGreen:    "#92E3A9",
+  bg:           "#F0F3F7",
+};
+
+// ── Confirmed constants ───────────────────────────────────────────────────
+const BASE_MARGIN_RATE  = 40;  // % — adjustable via slider
+const BASE_CHURN_RATE   = 10;  // % — adjustable via slider
+const CALIB_RATIO       = 0.80; // calibration = 80% of full retraining
+
+const EXCHANGE_DATA = [
+  { name: "applovin",   spend: 25681.70, color: "#4A90D9", pwb: false },
+  { name: "vungle",     spend: 24930.04, color: "#7B68EE", pwb: false },
+  { name: "fyber",      spend: 17252.36, color: "#FA5959", pwb: true  },
+  { name: "chartboost", spend:  9102.06, color: "#FFB347", pwb: true  },
+  { name: "unity",      spend:  6258.98, color: "#92E3A9", pwb: true  },
+  { name: "ironsource", spend:  2068.50, color: "#F4C430", pwb: false },
+  { name: "adx",        spend:  1071.80, color: "#B6D4FF", pwb: false },
+];
+const TOTAL_DAILY = EXCHANGE_DATA.reduce((s, e) => s + e.spend, 0);
+const PWB_DAILY   = EXCHANGE_DATA.filter(e => e.pwb).reduce((s, e) => s + e.spend, 0);
+
+const OLD_TRAINED_ACCOUNTS = [
+  { name: "SuperPlay_DiceDreams_And_RT",     spend: 6995.25 },
+  { name: "SciPlay_Jackpot_And_RT",          spend: 2865.88 },
+  { name: "SolitaireCash_ios_RT_PM",         spend: 6657.24 },
+  { name: "AviaGames_SolitaireClash_iOS_RT", spend: 1009.31 },
+  { name: "SciPlay_Goldfish_And_RT",         spend: 1000.90 },
+  { name: "Baglecode_ClubVegas_US_RT",       spend:  900.65 },
+  { name: "BingoCash_ios_RT_PM",             spend: 1596.27 },
+  { name: "PlayStudios_PopSlots_iOS_RT",     spend: 1565.56 },
+  { name: "Playstudios_MyVegas_iOS_RT",      spend: 1127.51 },
+  { name: "BubbleCash_ios_RT_PM",            spend:  916.36 },
+  { name: "SciPlay_Jackpot_iOS_RT",          spend:  288.75 },
+];
+const NEW_EXPLORATION_ACCOUNTS = [
+  { name: "Dream_RoyalMatch_iOS_RT",          spend: 16001.28 },
+  { name: "SuperPlay_DiceDreams_iOS_RT",      spend:  6734.24 },
+  { name: "Moonactive_CoinMaster_Android_RT", spend:  5063.94 },
+  { name: "Playtika_WSOP_RT_iOS_PM",          spend:  2137.15 },
+  { name: "Joybox_BingoRoyal_iOS_RT",         spend:  2049.24 },
+  { name: "Joybox_SolitaireDuels_iOS_RT",     spend:  2005.81 },
+  { name: "Joybox_FortuneBubble_iOS_RT",      spend:  1976.38 },
+  { name: "Joycastle_MatchingStory_iOS_RT",   spend:  1905.02 },
+  { name: "Playrix_Gardenscapes_iOS_RT_PM",   spend:  1894.34 },
+  { name: "Joybox_BubbleFever_iOS_RT",        spend:  1874.07 },
+  { name: "Joybox_BubblePeak_iOS_RT",         spend:  1755.92 },
+  { name: "Playrix_Township_iOS_RT_PM",       spend:  1690.72 },
+  { name: "JMS_RT_iOS",                       spend:  1543.69 },
+  { name: "Zynga_ZyngaPoker_iOS_RT_PM",       spend:  1507.77 },
+  { name: "Playtika_SGH_RT_iOS_PM",           spend:  1472.92 },
+  { name: "Joybox_SolitaireMaster_iOS_RT",    spend:  1438.44 },
+  { name: "Playtika_BingoBlitz_iOS_RT_PM",    spend:  1304.66 },
+  { name: "Fotoable_Jackpotland_iOS_RT",      spend:  1200.51 },
+  { name: "Playrix_Fishdom_iOS_RT_PM",        spend:  1151.10 },
+  { name: "Playrix_Homescapes_iOS_RT_PM",     spend:   989.37 },
+  { name: "Applovin_CarnivalTycoon_iOS_RT",   spend:   973.99 },
+  { name: "Joycastle_BingoFrenzy_iOS_RT",     spend:   778.84 },
+  { name: "Funplus_SOC_iOS_RT",               spend:   711.04 },
+  { name: "SciPlay_Jackpot_iOS_PM_RT",        spend:   675.35 },
+  { name: "Playtika_Caesars_iOS_RT_PM",       spend:   590.98 },
+  { name: "VividJoan_BingoWild_AND_RT",       spend:   545.68 },
+  { name: "Behefun_TopTycoon_iOS_RT",         spend:   510.25 },
+  { name: "DragonFire_SpinOrbCyclone_iOS_RT", spend:   500.68 },
+  { name: "Yotta_TheGrandMafia_iOS_RT",       spend:   458.38 },
+];
+const OLD_ONLY_ACCOUNTS = [
+  "Baba_BWS_And_RT","Baglecode_JackpotJoy_And_RT","BoleGames_LotsaSlots_And_RT",
+  "BoleGames_LotsaSlots_And_WW_RT","DGN_luckytimeslots_And_RT","Fotoable-Jackpotland-AND-RT",
+  "Fotoable-Jackpotland-AND-RT-NP","Gamehaus_GrandCashCasino_And_RT","Huuuge_BC_And_RT",
+  "Huuuge_BC_iOS_RT","Huuuge_HC_And_RT","Huuuge_HC_iOS14_RT","Huuuge_HC_iOS_RT",
+  "InnPlayLabs_Animals_And_Coins_iOS_RT","Joybox_BingoWinner_iOS_RT","Murka_ScatterSlots_And_RT",
+  "MyGames_RushRoyale_And_RT","Pixonic_WarRobots_And_RT",
+  "Playtika_BingoBlitz_And_RT","SciPlay_88_And_RT","SciPlay_88_IOS_RT","SciPlay_BingoS_And_RT",
+  "SciPlay_Goldfish_iOS_RT","SciPlay_HotShot_And_RT","SciPlay_Monopoly_And_RT",
+  "SciPlay_QuickHit_And_RT","SciPlay_QuickHit_IOS_RT","SpinX_JackpotCrush_And_RT",
+  "Zynga_Gotslot_And_RT","Zynga_ZyngaPoker_And_RT","Zynga_ZyngaPoker_iOS_RT",
+];
+
+const EXPLORATION_DAILY = NEW_EXPLORATION_ACCOUNTS.reduce((s, a) => s + a.spend, 0);
+const TRAINED_DAILY     = OLD_TRAINED_ACCOUNTS.reduce((s, a) => s + a.spend, 0);
+const MAX_SPEND         = NEW_EXPLORATION_ACCOUNTS[0].spend;
+
+// ── Scenario defaults ─────────────────────────────────────────────────────
+const SCENARIO_DEFAULTS = {
+  mostLikely: { churnRisk: 10, expansionAccts: 15, expansionGrowth: 10, pwbFix: 40, pwbExp: 5  },
+  veryGood:   { churnRisk: 20, expansionAccts: 25, expansionGrowth: 20, pwbFix: 65, pwbExp: 12 },
+  bestCase:   { churnRisk: 30, expansionAccts: 40, expansionGrowth: 30, pwbFix: 90, pwbExp: 20 },
+};
+
+// ── Calculations ──────────────────────────────────────────────────────────
+// All $ = Bigabid margin, not gross spend
+//
+// RT Calibration (Epic 5):
+//   Churn prevention: EXPLORATION_DAILY × churnRisk% × CALIB_RATIO × margin% × 90
+//   Budget expansion: top N exploration accounts × expansionGrowth% × margin% × 90
+//
+// PWB (Epic 7):
+//   Budget protection: exchange_spend × churnRisk% × pwbFix% × margin% × 90
+//   Budget expansion:  exchange_spend × pwbExp% × margin% × 90
+
+function calcRT(params, marginRate) {
+  const m = marginRate / 100;
+  const atRisk       = EXPLORATION_DAILY * (params.churnRisk / 100);
+  const saved        = atRisk * CALIB_RATIO;
+  const churnMargin  = saved * m;
+  const churnQtr     = churnMargin * 90;
+  const expandN      = Math.round(NEW_EXPLORATION_ACCOUNTS.length * (params.expansionAccts / 100));
+  const expandSpend  = NEW_EXPLORATION_ACCOUNTS.slice(0, expandN).reduce((s, a) => s + a.spend, 0);
+  const newSpend     = expandSpend * (params.expansionGrowth / 100);
+  const expMargin    = newSpend * m;
+  const expQtr       = expMargin * 90;
+  return {
+    atRisk, saved, churnMargin, churnQtr,
+    expandN, expandSpend, newSpend, expMargin, expQtr,
+    totalDailyMargin: churnMargin + expMargin,
+    totalQtr: churnQtr + expQtr,
+  };
+}
+
+function calcPWB(params, errorRates, marginRate) {
+  const m = marginRate / 100;
+  const exchanges = EXCHANGE_DATA.filter(e => e.pwb).map(ex => {
+    const err   = errorRates[ex.name];
+    const prot  = ex.spend * (params.churnRisk / 100) * (params.pwbFix / 100);
+    const exp   = ex.spend * (params.pwbExp / 100);
+    const margin = (prot + exp) * m;
+    return { ...ex, err, prot, exp, margin, qtr: margin * 90 };
+  });
+  const totalMargin = exchanges.reduce((s, e) => s + e.margin, 0);
+  return { exchanges, totalMargin, totalQtr: totalMargin * 90 };
+}
+
+// ── Formatters ────────────────────────────────────────────────────────────
+const fmt  = n => `$${n >= 1000 ? (n / 1000).toFixed(1) + "K" : n.toFixed(0)}`;
+const fmtQ = n => n >= 1e6 ? `$${(n / 1e6).toFixed(2)}M` : `$${(n / 1000).toFixed(0)}K`;
+const pct  = (a, b) => `${((a / b) * 100).toFixed(1)}%`;
+
+// ── Needle Gauge ──────────────────────────────────────────────────────────
+function Needle({ value, max, label, sublabel, color }) {
+  const clampedPct = Math.min(100, Math.max(0, (value / max) * 100));
+  // Needle sweeps from -135° to +135° (270° total arc)
+  const angleDeg = -135 + (clampedPct / 100) * 270;
+  const angleRad = ((angleDeg - 90) * Math.PI) / 180;
+  const cx = 80, cy = 72, r = 58;
+  const needleLen = 48;
+  const nx = cx + needleLen * Math.cos(angleRad);
+  const ny = cy + needleLen * Math.sin(angleRad);
+
+  // Arc path helpers
+  const arcX = (deg) => cx + r * Math.cos(((deg - 90) * Math.PI) / 180);
+  const arcY = (deg) => cy + r * Math.sin(((deg - 90) * Math.PI) / 180);
+
+  return (
+    <div style={{ textAlign: "center", fontFamily: "Poppins,sans-serif" }}>
+      <svg width="160" height="100" viewBox="0 0 160 100">
+        {/* Track arc */}
+        <path
+          d={`M ${arcX(-135)} ${arcY(-135)} A ${r} ${r} 0 1 1 ${arcX(135)} ${arcY(135)}`}
+          fill="none" stroke={B.silverLining} strokeWidth="7" strokeLinecap="round"
+        />
+        {/* Value arc */}
+        {clampedPct > 0 && (
+          <path
+            d={`M ${arcX(-135)} ${arcY(-135)} A ${r} ${r} 0 ${clampedPct > 50 ? 1 : 0} 1 ${arcX(-135 + (clampedPct / 100) * 270)} ${arcY(-135 + (clampedPct / 100) * 270)}`}
+            fill="none" stroke={color} strokeWidth="7" strokeLinecap="round"
+          />
+        )}
+        {/* Needle */}
+        <line x1={cx} y1={cy} x2={nx} y2={ny}
+          stroke={B.nightBlue} strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx={cx} cy={cy} r="5" fill={B.nightBlue} />
+        {/* Zone ticks */}
+        {[0, 33, 66, 100].map(p => {
+          const deg = -135 + (p / 100) * 270;
+          const rad = ((deg - 90) * Math.PI) / 180;
+          return (
+            <line key={p}
+              x1={cx + (r - 8) * Math.cos(rad)} y1={cy + (r - 8) * Math.sin(rad)}
+              x2={cx + (r + 2) * Math.cos(rad)} y2={cy + (r + 2) * Math.sin(rad)}
+              stroke={B.silverLining} strokeWidth="1.5" />
+          );
+        })}
+      </svg>
+      <div style={{ fontSize: 18, fontWeight: 800, color, marginTop: -10,
+        fontFamily: "Poppins,sans-serif" }}>{fmtQ(value)}</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: B.nightBlue,
+        fontFamily: "Poppins,sans-serif", marginTop: 2 }}>{label}</div>
+      {sublabel && <div style={{ fontSize: 9, color: "#999",
+        fontFamily: "Poppins,sans-serif", marginTop: 1 }}>{sublabel}</div>}
+    </div>
+  );
+}
+
+// ── UI Primitives ─────────────────────────────────────────────────────────
+function Card({ children, style = {} }) {
+  return (
+    <div style={{ background: B.white, borderRadius: 14, padding: 18,
+      boxShadow: "0 2px 12px rgba(27,54,92,0.07)", marginBottom: 14, ...style }}>
+      {children}
+    </div>
+  );
+}
+function SectionTitle({ icon, children, sub }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: B.nightBlue,
+        display: "flex", alignItems: "center", gap: 6, fontFamily: "Poppins,sans-serif" }}>
+        {icon} <span>{children}</span>
+      </div>
+      {sub && <div style={{ fontSize: 10, color: "#999", fontFamily: "Poppins,sans-serif",
+        marginTop: 2, paddingLeft: 20 }}>{sub}</div>}
+    </div>
+  );
+}
+function Slider({ label, value, min, max, step = 1, unit = "", onChange, accent }) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11,
+        fontFamily: "Poppins,sans-serif", color: B.nightBlue, marginBottom: 3 }}>
+        <span style={{ fontWeight: 500 }}>{label}</span>
+        <span style={{ fontWeight: 800, color: accent || B.livingCoral }}>{value}{unit}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        style={{ width: "100%", accentColor: accent || B.nightBlue, height: 4 }} />
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9,
+        color: "#ccc", fontFamily: "Poppins,sans-serif", marginTop: 1 }}>
+        <span>{min}{unit}</span><span>{max}{unit}</span>
+      </div>
+    </div>
+  );
+}
+function ScenarioTabs({ value, onChange }) {
+  const tabs = [["mostLikely", "Most Likely"], ["veryGood", "Very Good"], ["bestCase", "Best Case"]];
+  return (
+    <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
+      {tabs.map(([key, label]) => (
+        <button key={key} onClick={() => onChange(key)} style={{
+          flex: 1, padding: "9px 4px", borderRadius: 10, cursor: "pointer",
+          border: `2px solid ${value === key ? B.livingCoral : B.silverLining}`,
+          background: value === key ? B.livingCoral : B.white,
+          color: value === key ? B.white : B.nightBlue,
+          fontFamily: "Poppins,sans-serif", fontSize: 12, fontWeight: 700,
+          transition: "all .15s",
+        }}>{label}</button>
+      ))}
+    </div>
+  );
+}
+// Badge config for each timing state
+const TIMING = {
+  before:  { label: "📍 BEFORE FIX",    bg: "#FFF0F0", border: "#FA5959", color: "#c0392b", dot: "#FA5959" },
+  after:   { label: "✅ AFTER FIX",     bg: "#F0FFF5", border: "#27AE60", color: "#1e7a40", dot: "#27AE60" },
+  quality: { label: "⚙️ FIX QUALITY",   bg: "#F0F6FF", border: "#4A90D9", color: "#1a4a8a", dot: "#4A90D9" },
+  general: { label: "⚙️ MODEL INPUT",   bg: "#F5F5F5", border: "#aaa",    color: "#555",    dot: "#aaa"    },
+};
+
+function SliderWithNote({ label, value, min, max, step = 1, unit = "", onChange, accent, note, timing }) {
+  const t = TIMING[timing || "general"];
+  return (
+    <div style={{ marginBottom: 14, borderRadius: 10, overflow: "hidden",
+      border: `1px solid ${t.border}33` }}>
+      {/* Timing banner */}
+      <div style={{ background: t.bg, borderBottom: `1px solid ${t.border}33`,
+        padding: "4px 10px", display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ width: 6, height: 6, borderRadius: "50%", background: t.dot, flexShrink: 0 }} />
+        <span style={{ fontSize: 9, fontWeight: 800, color: t.color, letterSpacing: 0.5,
+          fontFamily: "Poppins,sans-serif", textTransform: "uppercase" }}>{t.label}</span>
+      </div>
+      {/* Slider body */}
+      <div style={{ padding: "8px 10px", background: B.white }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11,
+          fontFamily: "Poppins,sans-serif", color: B.nightBlue, marginBottom: 4 }}>
+          <span style={{ fontWeight: 600 }}>{label}</span>
+          <span style={{ fontWeight: 800, color: accent || t.dot }}>{value}{unit}</span>
+        </div>
+        <input type="range" min={min} max={max} step={step} value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          style={{ width: "100%", accentColor: accent || t.dot, height: 4 }} />
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9,
+          color: "#ccc", fontFamily: "Poppins,sans-serif", marginTop: 2 }}>
+          <span>{min}{unit}</span><span>{max}{unit}</span>
+        </div>
+        {note && (
+          <div style={{ fontSize: 9, color: "#777", fontFamily: "Poppins,sans-serif",
+            lineHeight: 1.5, marginTop: 6, paddingTop: 6,
+            borderTop: `1px dashed ${B.silverLining}` }}>
+            {note}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Pill({ label, value, color }) {
+  return (
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 4,
+      background: color + "18", border: `1px solid ${color}44`,
+      borderRadius: 20, padding: "4px 10px", fontSize: 10,
+      fontFamily: "Poppins,sans-serif" }}>
+      <span style={{ fontWeight: 800, color }}>{value}</span>
+      <span style={{ color: "#666" }}>{label}</span>
+    </div>
+  );
+}
+function BarRow({ label, value, max, color, badge, subLabel }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
+        fontSize: 11, color: B.nightBlue, fontFamily: "Poppins,sans-serif", marginBottom: 2 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5,
+          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "72%" }}>
+          <span style={{ fontWeight: 500 }}>
+            {label.replace(/_RT$|_RT_PM$|_iOS_RT.*$|_And_RT.*$|_ios_RT.*$/, "")}
+          </span>
+          {badge && (
+            <span style={{ fontSize: 9, background: badge.bg, color: badge.color,
+              borderRadius: 4, padding: "1px 5px", fontWeight: 700, flexShrink: 0 }}>
+              {badge.label}
+            </span>
+          )}
+        </div>
+        <span style={{ fontWeight: 700, color, flexShrink: 0 }}>{fmt(value)}</span>
+      </div>
+      {subLabel && <div style={{ fontSize: 9, color: "#aaa",
+        fontFamily: "Poppins,sans-serif", marginBottom: 2, paddingLeft: 2 }}>{subLabel}</div>}
+      <div style={{ height: 6, background: B.silverLining + "55", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${Math.min(100, (value / max) * 100)}%`,
+          background: color, borderRadius: 4 }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Summary Banner ────────────────────────────────────────────────────────
+function SummaryBanner({ rtQtr, pwbQtr, marginRate, scenario }) {
+  const labels = { mostLikely: "Most Likely", veryGood: "Very Good", bestCase: "Best Case" };
+  return (
+    <div style={{ background: `linear-gradient(135deg, ${B.nightBlue}, #2A4A7A)`,
+      borderRadius: 14, padding: "18px 20px", marginBottom: 18 }}>
+      <div style={{ fontSize: 9, color: B.silverLining, fontFamily: "Poppins,sans-serif",
+        letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>
+        Combined Q2 Bigabid Margin · {labels[scenario]} · Calibration Only
+      </div>
+      <div style={{ fontSize: 36, fontWeight: 800, color: B.white,
+        fontFamily: "Poppins,sans-serif", marginBottom: 4 }}>{fmtQ(rtQtr + pwbQtr)}</div>
+      <div style={{ fontSize: 10, color: B.silverLining, fontFamily: "Poppins,sans-serif",
+        marginBottom: 14 }}>
+        RT Calibration {fmtQ(rtQtr)} · PWB Exchanges {fmtQ(pwbQtr)}
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {[
+          { val: fmt(TOTAL_DAILY),              label: "RT Daily Spend",        color: B.surfGreen    },
+          { val: fmt(TOTAL_DAILY * marginRate / 100), label: "Bigabid Daily Margin", color: B.secureYellow },
+          { val: "29 / 40",                     label: "Cold-Start Accounts",   color: B.livingCoral  },
+          { val: fmt(PWB_DAILY),                label: "PWB Exchange Spend/day",color: B.skyBlue      },
+        ].map(s => (
+          <div key={s.label} style={{ background: "#ffffff15", borderRadius: 10,
+            padding: "9px 12px", textAlign: "center", flex: 1, minWidth: 70 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: s.color,
+              fontFamily: "Poppins,sans-serif" }}>{s.val}</div>
+            <div style={{ fontSize: 9, color: B.silverLining,
+              fontFamily: "Poppins,sans-serif", marginTop: 1 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── RT Panel (Epic 5) ─────────────────────────────────────────────────────
+function RTPanel({ scenario }) {
+  const def = SCENARIO_DEFAULTS[scenario];
+  const [marginRate,     setMarginRate]     = useState(BASE_MARGIN_RATE);
+  const [churnRisk,      setChurnRisk]      = useState(def.churnRisk);
+  const [expansionAccts, setExpansionAccts] = useState(def.expansionAccts);
+  const [expansionGrowth,setExpansionGrowth]= useState(def.expansionGrowth);
+  const [accountsTab,    setAccountsTab]    = useState("current");
+
+  // Reset sliders when scenario changes
+  const [prevScenario, setPrevScenario] = useState(scenario);
+  if (scenario !== prevScenario) {
+    setPrevScenario(scenario);
+    setChurnRisk(def.churnRisk);
+    setExpansionAccts(def.expansionAccts);
+    setExpansionGrowth(def.expansionGrowth);
+  }
+
+  const params = { churnRisk, expansionAccts, expansionGrowth };
+  const res    = calcRT(params, marginRate);
+  const maxNeedle = 800000; // $800K max for needle scale
+
+  return (
+    <div>
+      {/* Why this matters */}
+      <Card style={{ borderLeft: `4px solid ${B.livingCoral}` }}>
+        <SectionTitle icon="🔥" sub="71% of RT daily spend is running on models with zero exposure to these clients' own data">
+          Why RT Calibration moves the needle
+        </SectionTitle>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+          <Pill label="of RT budget on cold-start models"  value={pct(EXPLORATION_DAILY, TOTAL_DAILY)} color={B.livingCoral} />
+          <Pill label="cold-start accounts"                value="29 / 40"                             color={B.livingCoral} />
+          <Pill label="trained accounts with own data"     value="11 accounts"                              color={B.skyBlue}     />
+          <Pill label="calibration vs full retrain impact" value="~80%"                                color={B.surfGreen}   />
+        </div>
+        <div style={{ fontSize: 10, color: "#555", fontFamily: "Poppins,sans-serif",
+          lineHeight: 1.7, background: B.bg, borderRadius: 8, padding: "10px 12px" }}>
+          <strong>The problem:</strong> Cold-start exploration accounts represent {pct(EXPLORATION_DAILY, TOTAL_DAILY)} of RT spend
+          ({fmt(EXPLORATION_DAILY)}/day) but run on generic models with no client-specific calibration.
+          This leads to suboptimal ROID7 → clients reduce budgets or churn.
+          Calibration captures 80% of the improvement a full retrain would give — at a fraction of the effort.
+        </div>
+      </Card>
+
+      {/* Interactive sliders + needles */}
+      <Card>
+        <SectionTitle icon="🎛️" sub="Adjust assumptions — needles update live">
+          Simulate the Impact
+        </SectionTitle>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
+          {/* Sliders left column */}
+          <div style={{ paddingRight: 16, borderRight: `1px solid ${B.silverLining}44` }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#888",
+              fontFamily: "Poppins,sans-serif", marginBottom: 10,
+              textTransform: "uppercase", letterSpacing: 1 }}>Assumptions</div>
+            <SliderWithNote label="Bigabid margin rate" value={marginRate} min={10} max={60}
+              unit="%" onChange={setMarginRate} accent={B.nightBlue} timing="general"
+              note="The % of client media spend Bigabid keeps as revenue. All $ outputs are this fraction of gross spend." />
+            <SliderWithNote label="Cold-start budget at churn risk" value={churnRisk} min={5} max={40}
+              unit="%" onChange={setChurnRisk} accent={B.livingCoral} timing="before"
+              note={`What % of the $${(EXPLORATION_DAILY/1000).toFixed(0)}K/day cold-start spend is currently at risk of being reduced or cancelled due to poor ROID7. Calibration saves 80% of this at-risk amount.`} />
+            <SliderWithNote label="% of cold-start accounts that upsell" value={expansionAccts} min={5} max={50}
+              unit="%" onChange={setExpansionAccts} accent={B.surfGreen} timing="after"
+              note={`How many of the 29 cold-start accounts will increase their RT budget after seeing improved ROID7. At current setting: ${Math.round(NEW_EXPLORATION_ACCOUNTS.length * expansionAccts / 100)} out of 29 accounts.`} />
+            <SliderWithNote label="Spend increase per upselling account" value={expansionGrowth} min={5} max={40}
+              unit="%" onChange={setExpansionGrowth} accent={B.skyBlue} timing="after"
+              note="By how much each upselling account grows their daily RT spend. e.g. 10% means a $10K/day account becomes $11K/day." />
+
+            {/* Live formula */}
+            <div style={{ background: B.bg, borderRadius: 8, padding: "10px 12px",
+              fontSize: 9, color: "#666", fontFamily: "Poppins,sans-serif",
+              lineHeight: 1.8, marginTop: 8 }}>
+              <div><strong style={{ color: B.livingCoral }}>Churn save:</strong>{" "}
+                {fmt(EXPLORATION_DAILY)} × {churnRisk}% × 80% × {marginRate}% × 90d
+                {" = "}<strong>{fmtQ(res.churnQtr)}</strong>
+              </div>
+              <div><strong style={{ color: B.surfGreen }}>Expansion:</strong>{" "}
+                top {res.expandN} accts × +{expansionGrowth}% × {marginRate}% × 90d
+                {" = "}<strong>{fmtQ(res.expQtr)}</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Needles right column */}
+          <div style={{ paddingLeft: 16 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#888",
+              fontFamily: "Poppins,sans-serif", marginBottom: 10,
+              textTransform: "uppercase", letterSpacing: 1 }}>Needle Movement</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <Needle value={res.churnQtr}         max={maxNeedle * 0.7}  label="Churn Saved Q2"     sublabel="margin $"  color={B.livingCoral}  />
+              <Needle value={res.expQtr}            max={maxNeedle * 0.5}  label="Expansion Q2"       sublabel="margin $"  color={B.surfGreen}    />
+              <Needle value={res.totalQtr}          max={maxNeedle}        label="Total Q2 Margin"    sublabel="combined"  color={B.nightBlue}    />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Q2 result panel */}
+      <div style={{ background: B.nightBlue, borderRadius: 14, padding: "18px 20px",
+        marginBottom: 14 }}>
+        <div style={{ fontSize: 9, color: B.silverLining, fontFamily: "Poppins,sans-serif",
+          textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>
+          Q2 Bigabid Margin — RT Calibration
+        </div>
+        <div style={{ fontSize: 38, fontWeight: 800, color: B.white,
+          fontFamily: "Poppins,sans-serif" }}>{fmtQ(res.totalQtr)}</div>
+        <div style={{ display: "flex", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
+          {[
+            { val: fmtQ(res.churnQtr),  label: "Churn prevention",  color: B.livingCoral  },
+            { val: fmtQ(res.expQtr),    label: "Budget expansion",   color: B.surfGreen    },
+            { val: fmt(res.totalDailyMargin), label: "Margin/day",  color: B.secureYellow },
+          ].map(s => (
+            <div key={s.label} style={{ background: "#ffffff12", borderRadius: 10,
+              padding: "10px 14px", flex: 1, minWidth: 80 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: s.color,
+                fontFamily: "Poppins,sans-serif" }}>{s.val}</div>
+              <div style={{ fontSize: 9, color: B.silverLining,
+                fontFamily: "Poppins,sans-serif", marginTop: 2 }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 10, color: B.silverLining + "88",
+          fontFamily: "Poppins,sans-serif", marginTop: 10 }}>
+          Gross spend equivalent ~{fmtQ(res.totalQtr / (marginRate / 100))} — but that's client $, not Bigabid's
+        </div>
+      </div>
+
+      {/* Scenario comparison table */}
+      <Card>
+        <SectionTitle icon="📋">All Scenarios</SectionTitle>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11,
+          fontFamily: "Poppins,sans-serif" }}>
+          <thead>
+            <tr style={{ background: B.nightBlue, color: B.white }}>
+              {["Scenario", "Budget at Risk (before fix)", "Accts Expand (after fix)", "Growth (after fix)", "Churn Saved Q2", "Expansion Q2", "Total Q2"].map((h, i) => (
+                <th key={h} style={{ padding: "7px 8px", textAlign: i === 0 ? "left" : "right",
+                  fontWeight: 600, fontSize: 10 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(SCENARIO_DEFAULTS).map(([sc, def], i) => {
+              const r = calcRT(def, marginRate);
+              const active = sc === scenario;
+              const label = sc === "mostLikely" ? "Most Likely" : sc === "veryGood" ? "Very Good" : "Best Case";
+              return (
+                <tr key={sc} style={{
+                  background: active ? B.livingCoral + "18" : i % 2 === 0 ? "#f8f8f8" : B.white,
+                  fontWeight: active ? 700 : 400 }}>
+                  <td style={{ padding: "7px 8px" }}>{label}{active ? " ◄" : ""}</td>
+                  <td style={{ padding: "7px 8px", textAlign: "right", color: B.livingCoral }}>{def.churnRisk}%</td>
+                  <td style={{ padding: "7px 8px", textAlign: "right" }}>{def.expansionAccts}%</td>
+                  <td style={{ padding: "7px 8px", textAlign: "right", color: B.surfGreen }}>+{def.expansionGrowth}%</td>
+                  <td style={{ padding: "7px 8px", textAlign: "right" }}>{fmtQ(r.churnQtr)}</td>
+                  <td style={{ padding: "7px 8px", textAlign: "right" }}>{fmtQ(r.expQtr)}</td>
+                  <td style={{ padding: "7px 8px", textAlign: "right", fontWeight: 700 }}>{fmtQ(r.totalQtr)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div style={{ fontSize: 9, color: "#bbb", fontFamily: "Poppins,sans-serif", marginTop: 6 }}>
+          <div style={{ fontSize: 9, color: "#888", fontFamily: "Poppins,sans-serif", marginTop: 8, lineHeight: 1.6 }}>
+            <span style={{ fontWeight: 700, color: B.livingCoral }}>Why does Best Case have the highest "at risk" %?</span>{" "}
+            In the optimistic scenario we argue that <em>more</em> budget is currently at risk due to poor calibration —
+            meaning the fix saves more. Most Likely = conservative estimate of the problem size.
+            Best Case = we believe the problem is larger, so the saving is larger.
+            Adjust sliders above to simulate your own assumptions.
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <SectionTitle icon="👥">Account Budget Breakdown</SectionTitle>
+        <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+          {[["current", "Current RT (40)"], ["churned", "Churned Accounts (30)"]].map(([key, label]) => (
+            <button key={key} onClick={() => setAccountsTab(key)} style={{
+              flex: 1, padding: "7px 6px", borderRadius: 8, cursor: "pointer", fontSize: 11,
+              border: `2px solid ${accountsTab === key ? B.nightBlue : B.silverLining}`,
+              background: accountsTab === key ? B.nightBlue : B.white,
+              color: accountsTab === key ? B.white : B.nightBlue,
+              fontFamily: "Poppins,sans-serif", fontWeight: 600 }}>{label}</button>
+          ))}
+        </div>
+
+        {accountsTab === "current" && (
+          <>
+            <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 100, background: B.skyBlue + "22",
+                borderRadius: 10, padding: "8px 12px", borderLeft: `3px solid ${B.skyBlue}` }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: B.nightBlue,
+                  fontFamily: "Poppins,sans-serif" }}>{fmt(TRAINED_DAILY)}/day</div>
+                <div style={{ fontSize: 10, color: "#666",
+                  fontFamily: "Poppins,sans-serif" }}>11 trained accounts</div>
+              </div>
+              <div style={{ flex: 1, minWidth: 100, background: B.livingCoral + "18",
+                borderRadius: 10, padding: "8px 12px", borderLeft: `3px solid ${B.livingCoral}` }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: B.nightBlue,
+                  fontFamily: "Poppins,sans-serif" }}>{fmt(EXPLORATION_DAILY)}/day</div>
+                <div style={{ fontSize: 10, color: "#666",
+                  fontFamily: "Poppins,sans-serif" }}>29 cold-start accounts · {pct(EXPLORATION_DAILY, TOTAL_DAILY)} of budget</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: B.skyBlue,
+              fontFamily: "Poppins,sans-serif", marginBottom: 8 }}>✅ Trained on own data (6)</div>
+            {OLD_TRAINED_ACCOUNTS.map(a => (
+              <BarRow key={a.name} label={a.name} value={a.spend} max={MAX_SPEND}
+                color={B.skyBlue} badge={{ label: "trained", bg: B.skyBlue + "33", color: B.nightBlue }} />
+            ))}
+            <div style={{ fontSize: 11, fontWeight: 700, color: B.livingCoral,
+              fontFamily: "Poppins,sans-serif", margin: "16px 0 8px" }}>
+              🔬 Cold-Start — model has never seen their data (34)
+            </div>
+            {NEW_EXPLORATION_ACCOUNTS.map(a => (
+              <BarRow key={a.name} label={a.name} value={a.spend} max={MAX_SPEND}
+                color={B.livingCoral}
+                subLabel={`$${(a.spend * (churnRisk / 100) * (BASE_MARGIN_RATE / 100)).toFixed(0)}/day margin at risk`}
+                badge={{ label: "cold-start", bg: B.livingCoral + "22", color: B.livingCoral }} />
+            ))}
+          </>
+        )}
+
+        {accountsTab === "churned" && (
+          <>
+            <div style={{ background: B.secureYellow + "33", borderRadius: 10,
+              padding: "10px 14px", marginBottom: 12, borderLeft: `3px solid ${B.secureYellow}` }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: B.nightBlue,
+                fontFamily: "Poppins,sans-serif" }}>
+                30 churned accounts — were in the previous model training set but are no longer spending in RT
+              </div>
+              <div style={{ fontSize: 10, color: "#666",
+                fontFamily: "Poppins,sans-serif", marginTop: 2 }}>
+                Their data exists in the old model — calibration on them has no production impact.
+                The 29 cold-start accounts above are the real target.
+              </div>
+            </div>
+            {OLD_ONLY_ACCOUNTS.map(a => (
+              <div key={a} style={{ display: "flex", alignItems: "center",
+                padding: "5px 0", borderBottom: `1px solid ${B.silverLining}33` }}>
+                <div style={{ width: 7, height: 7, borderRadius: 2,
+                  background: B.silverLining, marginRight: 8, flexShrink: 0 }} />
+                <span style={{ fontSize: 10, color: "#aaa",
+                  fontFamily: "Poppins,sans-serif" }}>{a}</span>
+                <span style={{ marginLeft: "auto", fontSize: 9, background: "#f0f0f0",
+                  color: "#bbb", borderRadius: 4, padding: "1px 6px",
+                  fontFamily: "Poppins,sans-serif" }}>inactive</span>
+              </div>
+            ))}
+          </>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// ── PWB Panel (Epic 7) ────────────────────────────────────────────────────
+function PWBPanel({ scenario }) {
+  const def = SCENARIO_DEFAULTS[scenario];
+  const [marginRate, setMarginRate]   = useState(BASE_MARGIN_RATE);
+  const [churnRisk,  setChurnRisk]    = useState(def.churnRisk);
+  const [pwbFix,     setPwbFix]       = useState(def.pwbFix);
+  const [pwbExp,     setPwbExp]       = useState(def.pwbExp);
+  const [errorRates, setErrorRates]   = useState({ fyber: 22, unity: 18, chartboost: 18 });
+  const setErr = (name, val) => setErrorRates(prev => ({ ...prev, [name]: val }));
+
+  const [prevScenario, setPrevScenario] = useState(scenario);
+  if (scenario !== prevScenario) {
+    setPrevScenario(scenario);
+    setChurnRisk(def.churnRisk);
+    setPwbFix(def.pwbFix);
+    setPwbExp(def.pwbExp);
+  }
+
+  const params = { churnRisk, pwbFix, pwbExp };
+  const res    = calcPWB(params, errorRates, marginRate);
+  const maxNeedle = 400000;
+
+  return (
+    <div>
+      {/* Why this matters */}
+      <Card style={{ borderLeft: `4px solid ${B.livingCoral}` }}>
+        <SectionTitle icon="⚡" sub="Pricing errors on 3 exchanges = mispriced bids → poor ROAS → clients shift budget away">
+          Why PWB Model moves the needle
+        </SectionTitle>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+          <Pill label="of total RT spend on PWB exchanges"  value={pct(PWB_DAILY, TOTAL_DAILY)} color={B.livingCoral} />
+          <Pill label="PWB exchange spend/day"              value={fmt(PWB_DAILY)}               color={B.livingCoral} />
+          <Pill label="exchanges affected"                  value="3"                            color={B.skyBlue}     />
+          <Pill label="single model fix covers all three"   value="1 fix"                        color={B.surfGreen}   />
+        </div>
+        <div style={{ fontSize: 10, color: "#555", fontFamily: "Poppins,sans-serif",
+          lineHeight: 1.7, background: B.bg, borderRadius: 8, padding: "10px 12px" }}>
+          <strong>The problem:</strong> Fyber, Unity, and Chartboost use PWB pricing.
+          Mispriced bids cause two failure modes: overbidding burns client ROAS → budget cuts;
+          underbidding loses auctions → reach drops → clients move budgets to AppLovin/Vungle.
+          One improved model fixes all three exchanges simultaneously.
+        </div>
+      </Card>
+
+      {/* Interactive sliders + needles */}
+      <Card>
+        <SectionTitle icon="🎛️" sub="Adjust assumptions — needles update live">
+          Simulate the Impact
+        </SectionTitle>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
+          <div style={{ paddingRight: 16, borderRight: `1px solid ${B.silverLining}44` }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#888",
+              fontFamily: "Poppins,sans-serif", marginBottom: 10,
+              textTransform: "uppercase", letterSpacing: 1 }}>Assumptions</div>
+            <SliderWithNote label="Bigabid margin rate" value={marginRate} min={10} max={60}
+              unit="%" onChange={setMarginRate} accent={B.nightBlue} timing="general"
+              note="The % of client media spend Bigabid keeps as revenue. All $ outputs are this fraction of gross spend." />
+            <SliderWithNote label="PWB budget at churn risk" value={churnRisk} min={5} max={40}
+              unit="%" onChange={setChurnRisk} accent={B.livingCoral} timing="before"
+              note={`What % of the ${fmt(PWB_DAILY)}/day across Fyber, Unity, Chartboost is currently at risk — clients reducing or shifting budget because mispriced bids are hurting their ROAS.`} />
+            <SliderWithNote label="% of pricing errors the new model resolves" value={pwbFix} min={10} max={100}
+              unit="%" onChange={setPwbFix} accent={B.surfGreen} timing="quality"
+              note="How much of the mispricing does the new PWB iteration actually correct. 40% = conservative partial fix. 90% = near-complete correction." />
+            <SliderWithNote label="Budget growth on fixed exchanges" value={pwbExp} min={0} max={30}
+              unit="%" onChange={setPwbExp} accent={B.skyBlue} timing="after"
+              note="Once ROAS improves on Fyber/Unity/Chartboost, clients increase spend on those exchanges. % growth expected per exchange." />
+            <div style={{ fontSize: 9, fontWeight: 700, color: "#888",
+              fontFamily: "Poppins,sans-serif", marginTop: 10, marginBottom: 6,
+              textTransform: "uppercase", letterSpacing: 1 }}>Known Error Rate Per Exchange</div>
+            <SliderWithNote label="Fyber" value={errorRates.fyber} min={5} max={50}
+              unit="%" onChange={v => setErr("fyber", v)} accent={B.livingCoral} timing="before"
+              note="Current estimated pricing error rate on Fyber — how often bids are mispriced today." />
+            <SliderWithNote label="Unity" value={errorRates.unity} min={5} max={50}
+              unit="%" onChange={v => setErr("unity", v)} accent={B.skyBlue} timing="before"
+              note="Current estimated pricing error rate on Unity." />
+            <SliderWithNote label="Chartboost" value={errorRates.chartboost} min={5} max={50}
+              unit="%" onChange={v => setErr("chartboost", v)} accent={B.surfGreen} timing="before"
+              note="Current estimated pricing error rate on Chartboost." />
+
+            <div style={{ background: B.bg, borderRadius: 8, padding: "10px 12px",
+              fontSize: 9, color: "#666", fontFamily: "Poppins,sans-serif",
+              lineHeight: 1.8, marginTop: 8 }}>
+              <div><strong style={{ color: B.livingCoral }}>Protection:</strong>{" "}
+                exchange × {churnRisk}% risk × {pwbFix}% fixed × {marginRate}% × 90d</div>
+              <div><strong style={{ color: B.surfGreen }}>Expansion:</strong>{" "}
+                exchange × {pwbExp}% growth × {marginRate}% × 90d</div>
+            </div>
+          </div>
+
+          <div style={{ paddingLeft: 16 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#888",
+              fontFamily: "Poppins,sans-serif", marginBottom: 10,
+              textTransform: "uppercase", letterSpacing: 1 }}>Needle Movement</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {res.exchanges.map(ex => (
+                <Needle key={ex.name} value={ex.qtr} max={maxNeedle * 0.7}
+                  label={`${ex.name.charAt(0).toUpperCase() + ex.name.slice(1)} Q2`}
+                  sublabel="margin $" color={ex.color} />
+              ))}
+              <Needle value={res.totalQtr} max={maxNeedle}
+                label="Total PWB Q2" sublabel="combined" color={B.nightBlue} />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Q2 result */}
+      <div style={{ background: B.nightBlue, borderRadius: 14, padding: "18px 20px",
+        marginBottom: 14 }}>
+        <div style={{ fontSize: 9, color: B.silverLining, fontFamily: "Poppins,sans-serif",
+          textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>
+          Q2 Bigabid Margin — PWB Exchanges
+        </div>
+        <div style={{ fontSize: 38, fontWeight: 800, color: B.white,
+          fontFamily: "Poppins,sans-serif" }}>{fmtQ(res.totalQtr)}</div>
+        <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+          {res.exchanges.map(ex => (
+            <div key={ex.name} style={{ background: "#ffffff12", borderRadius: 10,
+              padding: "10px 14px", flex: 1, minWidth: 80 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: ex.color,
+                fontFamily: "Poppins,sans-serif" }}>{fmtQ(ex.qtr)}</div>
+              <div style={{ fontSize: 9, color: B.silverLining,
+                fontFamily: "Poppins,sans-serif", marginTop: 2, textTransform: "capitalize" }}>{ex.name}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Per-exchange breakdown bars */}
+      <Card>
+        <SectionTitle icon="📊">Per-Exchange Detail</SectionTitle>
+        {res.exchanges.map(ex => (
+          <div key={ex.name} style={{ display: "flex", alignItems: "center", gap: 10,
+            padding: "12px 14px", borderRadius: 10, marginBottom: 8,
+            background: ex.color + "12", borderLeft: `3px solid ${ex.color}` }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: B.nightBlue,
+                fontFamily: "Poppins,sans-serif", textTransform: "capitalize",
+                marginBottom: 3 }}>{ex.name}</div>
+              <div style={{ fontSize: 9, color: "#777", fontFamily: "Poppins,sans-serif",
+                lineHeight: 1.7 }}>
+                <div>{fmt(ex.spend)}/day spend · {ex.err}% pricing error rate</div>
+                <div>Protected: {fmt(ex.prot)}/day · Expansion: {fmt(ex.exp)}/day</div>
+                <div>Bigabid margin/day: <strong>{fmt(ex.margin)}</strong></div>
+              </div>
+            </div>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: ex.color,
+                fontFamily: "Poppins,sans-serif" }}>{fmtQ(ex.qtr)}</div>
+              <div style={{ fontSize: 9, color: "#aaa",
+                fontFamily: "Poppins,sans-serif" }}>Q2 margin</div>
+            </div>
+          </div>
+        ))}
+
+        <div style={{ marginTop: 8 }}>
+          <SectionTitle icon="📋">All Scenarios</SectionTitle>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11,
+            fontFamily: "Poppins,sans-serif" }}>
+            <thead>
+              <tr style={{ background: B.nightBlue, color: B.white }}>
+                {["Scenario", "At Risk (before)", "Fix Quality", "Expansion (after)", "Fyber Q2", "Unity Q2", "Chartboost Q2", "Total Q2"].map((h, i) => (
+                  <th key={h} style={{ padding: "7px 8px", textAlign: i === 0 ? "left" : "right",
+                    fontSize: 10, fontWeight: 600 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(SCENARIO_DEFAULTS).map(([sc, def], i) => {
+                const r = calcPWB(def, errorRates, marginRate);
+                const active = sc === scenario;
+                const label = sc === "mostLikely" ? "Most Likely" : sc === "veryGood" ? "Very Good" : "Best Case";
+                return (
+                  <tr key={sc} style={{
+                    background: active ? B.livingCoral + "18" : i % 2 === 0 ? "#f8f8f8" : B.white,
+                    fontWeight: active ? 700 : 400 }}>
+                    <td style={{ padding: "7px 8px" }}>{label}{active ? " ◄" : ""}</td>
+                    <td style={{ padding: "7px 8px", textAlign: "right", color: B.livingCoral }}>{def.churnRisk}%</td>
+                    <td style={{ padding: "7px 8px", textAlign: "right" }}>{def.pwbFix}%</td>
+                    <td style={{ padding: "7px 8px", textAlign: "right", color: B.surfGreen }}>+{def.pwbExp}%</td>
+                    {r.exchanges.map(e => (
+                      <td key={e.name} style={{ padding: "7px 8px", textAlign: "right" }}>{fmtQ(e.qtr)}</td>
+                    ))}
+                    <td style={{ padding: "7px 8px", textAlign: "right", fontWeight: 700 }}>{fmtQ(r.totalQtr)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Exchange budget breakdown */}
+      <Card>
+        <SectionTitle icon="💱">RT Budget by Exchange
+          <span style={{ fontSize: 10, fontWeight: 400, color: "#888", marginLeft: 6 }}>
+            {fmt(TOTAL_DAILY)}/day total
+          </span>
+        </SectionTitle>
+        {EXCHANGE_DATA.map(ex => (
+          <div key={ex.name} style={{ marginBottom: 9 }}>
+            <div style={{ display: "flex", justifyContent: "space-between",
+              alignItems: "center", marginBottom: 3 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 3, background: ex.color }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: B.nightBlue,
+                  fontFamily: "Poppins,sans-serif", textTransform: "capitalize" }}>{ex.name}</span>
+                {ex.pwb && (
+                  <span style={{ fontSize: 9, background: B.livingCoral + "22",
+                    color: B.livingCoral, borderRadius: 4, padding: "1px 6px",
+                    fontWeight: 700, fontFamily: "Poppins,sans-serif" }}>PWB target</span>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <span style={{ fontSize: 10, color: "#bbb" }}>{pct(ex.spend, TOTAL_DAILY)}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: B.nightBlue,
+                  fontFamily: "Poppins,sans-serif" }}>{fmt(ex.spend)}</span>
+              </div>
+            </div>
+            <div style={{ height: 7, background: B.silverLining + "55", borderRadius: 5, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: pct(ex.spend, TOTAL_DAILY),
+                background: ex.color, borderRadius: 5 }} />
+            </div>
+          </div>
+        ))}
+      </Card>
+    </div>
+  );
+}
+
+// ── Main App ──────────────────────────────────────────────────────────────
+function NeedleSimulator() {
+  const [tab,      setTab]      = useState("rt");
+  const [scenario, setScenario] = useState("mostLikely");
+
+  // Compute summary numbers for banner
+  const rtRes  = calcRT(SCENARIO_DEFAULTS[scenario], BASE_MARGIN_RATE);
+  const pwbRes = calcPWB(SCENARIO_DEFAULTS[scenario], { fyber: 22, unity: 18, chartboost: 18 }, BASE_MARGIN_RATE);
+
+  return (
+    <div style={{ background: B.bg, minHeight: "100vh", padding: "18px 14px",
+      fontFamily: "Poppins,sans-serif" }}>
+
+      {/* ── Header ── */}
+      <div style={{
+        background: `linear-gradient(135deg, #0a1e3d 0%, ${B.nightBlue} 55%, #1e3d6e 100%)`,
+        borderRadius: 20, marginBottom: 18, overflow: "hidden",
+        boxShadow: "0 8px 36px rgba(10,30,61,0.32)",
+      }}>
+        {/* Top bar: brand left, author right */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "18px 22px 0 22px" }}>
+
+          {/* Bigabid wordmark only */}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+            <span style={{
+              fontSize: 28, fontWeight: 900, color: B.white,
+              fontFamily: "'Poppins', sans-serif", letterSpacing: -1.5, lineHeight: 1,
+              textTransform: "lowercase",
+            }}>bigabid</span>
+            <span style={{
+              fontSize: 11, fontWeight: 800, color: B.livingCoral,
+              fontFamily: "Poppins, sans-serif", letterSpacing: 3,
+              textTransform: "uppercase",
+            }}>Q2 · 2026</span>
+          </div>
+
+          {/* Author */}
+          <div style={{ textAlign: "right" }}>
+            <div style={{
+              fontSize: 14, fontWeight: 700, color: B.white,
+              fontFamily: "Poppins, sans-serif", letterSpacing: -0.3,
+            }}>Or Dahan</div>
+            <div style={{
+              fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.4)",
+              fontFamily: "Poppins, sans-serif", marginTop: 2, letterSpacing: 0.3,
+            }}>DS Product Manager</div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "16px 22px 0" }} />
+
+        {/* Title + subtitle */}
+        <div style={{ padding: "16px 22px 22px" }}>
+          <div style={{
+            fontSize: 30, fontWeight: 900, color: B.white, letterSpacing: -1.2,
+            fontFamily: "Poppins, sans-serif", lineHeight: 1.1, marginBottom: 8,
+          }}>
+            Needle Movement<br/>
+            <span style={{ color: B.skyBlue }}>Simulator</span>
+          </div>
+          <div style={{
+            fontSize: 11, color: "rgba(255,255,255,0.38)", fontWeight: 500,
+            fontFamily: "Poppins, sans-serif", letterSpacing: 0.4,
+          }}>
+            Bigabid margin $ · 40% base margin · 10% historical churn · Calibration only
+          </div>
+        </div>
+      </div>
+
+      <ScenarioTabs value={scenario} onChange={setScenario} />
+      <SummaryBanner
+        rtQtr={rtRes.totalQtr}
+        pwbQtr={pwbRes.totalQtr}
+        marginRate={BASE_MARGIN_RATE}
+        scenario={scenario}
+      />
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+        {[
+          ["rt",  "⚙️", "RT Calibration", "Cold-Start Accounts"],
+          ["pwb", "💱", "PWB Exchanges",   "Fyber · Unity · Chartboost"],
+        ].map(([key, icon, epic, sub]) => (
+          <button key={key} onClick={() => setTab(key)} style={{
+            flex: 1, padding: "14px 10px", borderRadius: 14, cursor: "pointer",
+            border: `2px solid ${tab === key ? B.livingCoral : "#e0e4ec"}`,
+            background: tab === key
+              ? `linear-gradient(135deg, ${B.nightBlue}, #2a4a7a)`
+              : B.white,
+            fontFamily: "Poppins, sans-serif",
+            boxShadow: tab === key ? "0 4px 16px rgba(27,54,92,0.18)" : "none",
+            transition: "all .15s",
+          }}>
+            <div style={{ fontSize: 18, marginBottom: 4 }}>{icon}</div>
+            <div style={{
+              fontSize: 13, fontWeight: 900, letterSpacing: -0.3,
+              color: tab === key ? B.white : B.nightBlue,
+              fontFamily: "Poppins, sans-serif",
+            }}>{epic}</div>
+            <div style={{
+              fontSize: 10, fontWeight: 500, marginTop: 2,
+              color: tab === key ? "rgba(255,255,255,0.55)" : "#888",
+              fontFamily: "Poppins, sans-serif",
+            }}>{sub}</div>
+          </button>
+        ))}
+      </div>
+
+      {tab === "rt"  && <RTPanel  scenario={scenario} />}
+      {tab === "pwb" && <PWBPanel scenario={scenario} />}
+
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center",
+        gap: 10, marginTop: 18, paddingTop: 14,
+        borderTop: `1px solid ${B.silverLining}44` }}>
+        <div style={{ background: B.nightBlue, borderRadius: 6, padding: "3px 8px",
+          display: "flex", alignItems: "center", gap: 5 }}>
+          <svg width="14" height="10" viewBox="0 0 44 32" fill="none">
+            <path d="M8 20 C4 20 2 16 4 12 C6 8 12 6 18 8 C20 4 26 2 32 4 C38 6 42 12 40 18 C38 24 32 26 26 24 L20 28 L22 22 C16 24 10 24 8 20Z"
+              fill="#B6D4FF" opacity="0.9"/>
+            <path d="M26 24 L32 30 L28 24" fill="#92E3A9"/>
+          </svg>
+          <span style={{ fontSize: 10, fontWeight: 800, color: B.white,
+            fontFamily: "Poppins,sans-serif" }}>bigabid</span>
+        </div>
+        <span style={{ fontSize: 10, color: "#bbb", fontFamily: "Poppins,sans-serif" }}>
+          Q2 Impact Simulator · Made by <strong style={{ color: "#999" }}>Or Dahan</strong>, DS Product Manager
+        </span>
+      </div>
+    </div>
+  );
+}
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<NeedleSimulator />);
+  </script>
+</body>
+</html>
