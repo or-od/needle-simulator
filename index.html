@@ -1,24 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Needle Movement Simulator — Bigabid Q2 2026</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #F0F3F7; font-family: 'Poppins', sans-serif; }
-    input[type=range] { cursor: pointer; }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="text/babel">
-    const { useState } = React;
-
+import { useState } from "react";
 
 const B = {
   nightBlue:    "#1B365C",
@@ -212,9 +192,9 @@ function Needle({ value, max, label, sublabel, color }) {
       </svg>
       <div style={{ fontSize: 18, fontWeight: 800, color, marginTop: -10,
         fontFamily: "Poppins,sans-serif" }}>{fmtQ(value)}</div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: B.nightBlue,
+      <div style={{ fontSize: 13, fontWeight: 700, color: B.nightBlue,
         fontFamily: "Poppins,sans-serif", marginTop: 2 }}>{label}</div>
-      {sublabel && <div style={{ fontSize: 9, color: "#999",
+      {sublabel && <div style={{ fontSize: 13, color: "#999",
         fontFamily: "Poppins,sans-serif", marginTop: 1 }}>{sublabel}</div>}
     </div>
   );
@@ -232,11 +212,11 @@ function Card({ children, style = {} }) {
 function SectionTitle({ icon, children, sub }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: B.nightBlue,
+      <div style={{ fontSize: 15, fontWeight: 700, color: B.nightBlue,
         display: "flex", alignItems: "center", gap: 6, fontFamily: "Poppins,sans-serif" }}>
         {icon} <span>{children}</span>
       </div>
-      {sub && <div style={{ fontSize: 10, color: "#999", fontFamily: "Poppins,sans-serif",
+      {sub && <div style={{ fontSize: 13, color: "#999", fontFamily: "Poppins,sans-serif",
         marginTop: 2, paddingLeft: 20 }}>{sub}</div>}
     </div>
   );
@@ -244,7 +224,7 @@ function SectionTitle({ icon, children, sub }) {
 function Slider({ label, value, min, max, step = 1, unit = "", onChange, accent }) {
   return (
     <div style={{ marginBottom: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11,
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13,
         fontFamily: "Poppins,sans-serif", color: B.nightBlue, marginBottom: 3 }}>
         <span style={{ fontWeight: 500 }}>{label}</span>
         <span style={{ fontWeight: 800, color: accent || B.livingCoral }}>{value}{unit}</span>
@@ -252,7 +232,7 @@ function Slider({ label, value, min, max, step = 1, unit = "", onChange, accent 
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(Number(e.target.value))}
         style={{ width: "100%", accentColor: accent || B.nightBlue, height: 4 }} />
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9,
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13,
         color: "#ccc", fontFamily: "Poppins,sans-serif", marginTop: 1 }}>
         <span>{min}{unit}</span><span>{max}{unit}</span>
       </div>
@@ -269,7 +249,7 @@ function ScenarioTabs({ value, onChange }) {
           border: `2px solid ${value === key ? B.livingCoral : B.silverLining}`,
           background: value === key ? B.livingCoral : B.white,
           color: value === key ? B.white : B.nightBlue,
-          fontFamily: "Poppins,sans-serif", fontSize: 12, fontWeight: 700,
+          fontFamily: "Poppins,sans-serif", fontSize: 13, fontWeight: 700,
           transition: "all .15s",
         }}>{label}</button>
       ))}
@@ -278,9 +258,9 @@ function ScenarioTabs({ value, onChange }) {
 }
 // Badge config for each timing state
 const TIMING = {
-  before:  { label: "📍 BEFORE FIX",    bg: "#FFF0F0", border: "#FA5959", color: "#c0392b", dot: "#FA5959" },
-  after:   { label: "✅ AFTER FIX",     bg: "#F0FFF5", border: "#27AE60", color: "#1e7a40", dot: "#27AE60" },
-  quality: { label: "⚙️ FIX QUALITY",   bg: "#F0F6FF", border: "#4A90D9", color: "#1a4a8a", dot: "#4A90D9" },
+  before:  { label: "📍 BEFORE DEPLOYMENT",    bg: "#FFF0F0", border: "#FA5959", color: "#c0392b", dot: "#FA5959" },
+  after:   { label: "✅ AFTER DEPLOYMENT",     bg: "#F0FFF5", border: "#27AE60", color: "#1e7a40", dot: "#27AE60" },
+  quality: { label: "⚙️ DEPLOYMENT QUALITY",   bg: "#F0F6FF", border: "#4A90D9", color: "#1a4a8a", dot: "#4A90D9" },
   general: { label: "⚙️ MODEL INPUT",   bg: "#F5F5F5", border: "#aaa",    color: "#555",    dot: "#aaa"    },
 };
 
@@ -293,12 +273,12 @@ function SliderWithNote({ label, value, min, max, step = 1, unit = "", onChange,
       <div style={{ background: t.bg, borderBottom: `1px solid ${t.border}33`,
         padding: "4px 10px", display: "flex", alignItems: "center", gap: 6 }}>
         <div style={{ width: 6, height: 6, borderRadius: "50%", background: t.dot, flexShrink: 0 }} />
-        <span style={{ fontSize: 9, fontWeight: 800, color: t.color, letterSpacing: 0.5,
+        <span style={{ fontSize: 13, fontWeight: 800, color: t.color, letterSpacing: 0.5,
           fontFamily: "Poppins,sans-serif", textTransform: "uppercase" }}>{t.label}</span>
       </div>
       {/* Slider body */}
       <div style={{ padding: "8px 10px", background: B.white }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11,
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13,
           fontFamily: "Poppins,sans-serif", color: B.nightBlue, marginBottom: 4 }}>
           <span style={{ fontWeight: 600 }}>{label}</span>
           <span style={{ fontWeight: 800, color: accent || t.dot }}>{value}{unit}</span>
@@ -306,12 +286,12 @@ function SliderWithNote({ label, value, min, max, step = 1, unit = "", onChange,
         <input type="range" min={min} max={max} step={step} value={value}
           onChange={e => onChange(Number(e.target.value))}
           style={{ width: "100%", accentColor: accent || t.dot, height: 4 }} />
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9,
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13,
           color: "#ccc", fontFamily: "Poppins,sans-serif", marginTop: 2 }}>
           <span>{min}{unit}</span><span>{max}{unit}</span>
         </div>
         {note && (
-          <div style={{ fontSize: 9, color: "#777", fontFamily: "Poppins,sans-serif",
+          <div style={{ fontSize: 13, color: "#777", fontFamily: "Poppins,sans-serif",
             lineHeight: 1.5, marginTop: 6, paddingTop: 6,
             borderTop: `1px dashed ${B.silverLining}` }}>
             {note}
@@ -326,7 +306,7 @@ function Pill({ label, value, color }) {
   return (
     <div style={{ display: "inline-flex", alignItems: "center", gap: 4,
       background: color + "18", border: `1px solid ${color}44`,
-      borderRadius: 20, padding: "4px 10px", fontSize: 10,
+      borderRadius: 20, padding: "4px 10px", fontSize: 13,
       fontFamily: "Poppins,sans-serif" }}>
       <span style={{ fontWeight: 800, color }}>{value}</span>
       <span style={{ color: "#666" }}>{label}</span>
@@ -337,14 +317,14 @@ function BarRow({ label, value, max, color, badge, subLabel }) {
   return (
     <div style={{ marginBottom: 8 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-        fontSize: 11, color: B.nightBlue, fontFamily: "Poppins,sans-serif", marginBottom: 2 }}>
+        fontSize: 13, color: B.nightBlue, fontFamily: "Poppins,sans-serif", marginBottom: 2 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5,
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "72%" }}>
           <span style={{ fontWeight: 500 }}>
             {label.replace(/_RT$|_RT_PM$|_iOS_RT.*$|_And_RT.*$|_ios_RT.*$/, "")}
           </span>
           {badge && (
-            <span style={{ fontSize: 9, background: badge.bg, color: badge.color,
+            <span style={{ fontSize: 13, background: badge.bg, color: badge.color,
               borderRadius: 4, padding: "1px 5px", fontWeight: 700, flexShrink: 0 }}>
               {badge.label}
             </span>
@@ -352,7 +332,7 @@ function BarRow({ label, value, max, color, badge, subLabel }) {
         </div>
         <span style={{ fontWeight: 700, color, flexShrink: 0 }}>{fmt(value)}</span>
       </div>
-      {subLabel && <div style={{ fontSize: 9, color: "#aaa",
+      {subLabel && <div style={{ fontSize: 13, color: "#aaa",
         fontFamily: "Poppins,sans-serif", marginBottom: 2, paddingLeft: 2 }}>{subLabel}</div>}
       <div style={{ height: 6, background: B.silverLining + "55", borderRadius: 4, overflow: "hidden" }}>
         <div style={{ height: "100%", width: `${Math.min(100, (value / max) * 100)}%`,
@@ -368,28 +348,28 @@ function SummaryBanner({ rtQtr, pwbQtr, marginRate, scenario }) {
   return (
     <div style={{ background: `linear-gradient(135deg, ${B.nightBlue}, #2A4A7A)`,
       borderRadius: 14, padding: "18px 20px", marginBottom: 18 }}>
-      <div style={{ fontSize: 9, color: B.silverLining, fontFamily: "Poppins,sans-serif",
+      <div style={{ fontSize: 13, color: B.silverLining, fontFamily: "Poppins,sans-serif",
         letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>
-        Combined Q2 Bigabid Margin · {labels[scenario]} · Calibration Only
+        Combined Q2 Expected Revenue Saved · {labels[scenario]} · Calibration Only
       </div>
       <div style={{ fontSize: 36, fontWeight: 800, color: B.white,
         fontFamily: "Poppins,sans-serif", marginBottom: 4 }}>{fmtQ(rtQtr + pwbQtr)}</div>
-      <div style={{ fontSize: 10, color: B.silverLining, fontFamily: "Poppins,sans-serif",
+      <div style={{ fontSize: 13, color: B.silverLining, fontFamily: "Poppins,sans-serif",
         marginBottom: 14 }}>
         RT Calibration {fmtQ(rtQtr)} · PWB Exchanges {fmtQ(pwbQtr)}
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {[
           { val: fmt(TOTAL_DAILY),              label: "RT Daily Spend",        color: B.surfGreen    },
-          { val: fmt(TOTAL_DAILY * marginRate / 100), label: "Bigabid Daily Margin", color: B.secureYellow },
+          { val: fmt(TOTAL_DAILY * marginRate / 100), label: "Expected Revenue Saved/day", color: B.secureYellow },
           { val: "29 / 40",                     label: "Cold-Start Accounts",   color: B.livingCoral  },
           { val: fmt(PWB_DAILY),                label: "PWB Exchange Spend/day",color: B.skyBlue      },
         ].map(s => (
           <div key={s.label} style={{ background: "#ffffff15", borderRadius: 10,
             padding: "9px 12px", textAlign: "center", flex: 1, minWidth: 70 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: s.color,
+            <div style={{ fontSize: 15, fontWeight: 800, color: s.color,
               fontFamily: "Poppins,sans-serif" }}>{s.val}</div>
-            <div style={{ fontSize: 9, color: B.silverLining,
+            <div style={{ fontSize: 13, color: B.silverLining,
               fontFamily: "Poppins,sans-serif", marginTop: 1 }}>{s.label}</div>
           </div>
         ))}
@@ -433,7 +413,7 @@ function RTPanel({ scenario }) {
           <Pill label="trained accounts with own data"     value="11 accounts"                              color={B.skyBlue}     />
           <Pill label="calibration vs full retrain impact" value="~80%"                                color={B.surfGreen}   />
         </div>
-        <div style={{ fontSize: 10, color: "#555", fontFamily: "Poppins,sans-serif",
+        <div style={{ fontSize: 13, color: "#555", fontFamily: "Poppins,sans-serif",
           lineHeight: 1.7, background: B.bg, borderRadius: 8, padding: "10px 12px" }}>
           <strong>The problem:</strong> Cold-start exploration accounts represent {pct(EXPLORATION_DAILY, TOTAL_DAILY)} of RT spend
           ({fmt(EXPLORATION_DAILY)}/day) but run on generic models with no client-specific calibration.
@@ -451,7 +431,7 @@ function RTPanel({ scenario }) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
           {/* Sliders left column */}
           <div style={{ paddingRight: 16, borderRight: `1px solid ${B.silverLining}44` }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#888",
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#888",
               fontFamily: "Poppins,sans-serif", marginBottom: 10,
               textTransform: "uppercase", letterSpacing: 1 }}>Assumptions</div>
             <SliderWithNote label="Bigabid margin rate" value={marginRate} min={10} max={60}
@@ -469,9 +449,9 @@ function RTPanel({ scenario }) {
 
             {/* Live formula */}
             <div style={{ background: B.bg, borderRadius: 8, padding: "10px 12px",
-              fontSize: 9, color: "#666", fontFamily: "Poppins,sans-serif",
+              fontSize: 13, color: "#666", fontFamily: "Poppins,sans-serif",
               lineHeight: 1.8, marginTop: 8 }}>
-              <div><strong style={{ color: B.livingCoral }}>Churn save:</strong>{" "}
+              <div><strong style={{ color: B.surfGreen }}>Revenue saved (churn):</strong>{" "}
                 {fmt(EXPLORATION_DAILY)} × {churnRisk}% × 80% × {marginRate}% × 90d
                 {" = "}<strong>{fmtQ(res.churnQtr)}</strong>
               </div>
@@ -484,13 +464,13 @@ function RTPanel({ scenario }) {
 
           {/* Needles right column */}
           <div style={{ paddingLeft: 16 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#888",
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#888",
               fontFamily: "Poppins,sans-serif", marginBottom: 10,
               textTransform: "uppercase", letterSpacing: 1 }}>Needle Movement</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <Needle value={res.churnQtr}         max={maxNeedle * 0.7}  label="Churn Saved Q2"     sublabel="margin $"  color={B.livingCoral}  />
-              <Needle value={res.expQtr}            max={maxNeedle * 0.5}  label="Expansion Q2"       sublabel="margin $"  color={B.surfGreen}    />
-              <Needle value={res.totalQtr}          max={maxNeedle}        label="Total Q2 Margin"    sublabel="combined"  color={B.nightBlue}    />
+              <Needle value={res.churnQtr}         max={maxNeedle * 0.7}  label="Rev Saved Q2"     sublabel="rev saved"  color={B.surfGreen}  />
+              <Needle value={res.expQtr}            max={maxNeedle * 0.5}  label="Rev Expansion Q2"       sublabel="rev saved"  color={B.surfGreen}    />
+              <Needle value={res.totalQtr}          max={maxNeedle}        label="Total Q2 Revenue Saved"    sublabel="rev saved"  color={B.nightBlue}    />
             </div>
           </div>
         </div>
@@ -499,7 +479,7 @@ function RTPanel({ scenario }) {
       {/* Q2 result panel */}
       <div style={{ background: B.nightBlue, borderRadius: 14, padding: "18px 20px",
         marginBottom: 14 }}>
-        <div style={{ fontSize: 9, color: B.silverLining, fontFamily: "Poppins,sans-serif",
+        <div style={{ fontSize: 13, color: B.silverLining, fontFamily: "Poppins,sans-serif",
           textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>
           Q2 Bigabid Margin — RT Calibration
         </div>
@@ -507,20 +487,20 @@ function RTPanel({ scenario }) {
           fontFamily: "Poppins,sans-serif" }}>{fmtQ(res.totalQtr)}</div>
         <div style={{ display: "flex", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
           {[
-            { val: fmtQ(res.churnQtr),  label: "Churn prevention",  color: B.livingCoral  },
-            { val: fmtQ(res.expQtr),    label: "Budget expansion",   color: B.surfGreen    },
-            { val: fmt(res.totalDailyMargin), label: "Margin/day",  color: B.secureYellow },
+            { val: fmtQ(res.churnQtr),  label: "Revenue protected from churn",  color: B.livingCoral  },
+            { val: fmtQ(res.expQtr),    label: "Revenue from expansion",   color: B.surfGreen    },
+            { val: fmt(res.totalDailyMargin), label: "Revenue Saved/day",  color: B.secureYellow },
           ].map(s => (
             <div key={s.label} style={{ background: "#ffffff12", borderRadius: 10,
               padding: "10px 14px", flex: 1, minWidth: 80 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: s.color,
                 fontFamily: "Poppins,sans-serif" }}>{s.val}</div>
-              <div style={{ fontSize: 9, color: B.silverLining,
+              <div style={{ fontSize: 13, color: B.silverLining,
                 fontFamily: "Poppins,sans-serif", marginTop: 2 }}>{s.label}</div>
             </div>
           ))}
         </div>
-        <div style={{ fontSize: 10, color: B.silverLining + "88",
+        <div style={{ fontSize: 13, color: B.silverLining + "88",
           fontFamily: "Poppins,sans-serif", marginTop: 10 }}>
           Gross spend equivalent ~{fmtQ(res.totalQtr / (marginRate / 100))} — but that's client $, not Bigabid's
         </div>
@@ -529,13 +509,13 @@ function RTPanel({ scenario }) {
       {/* Scenario comparison table */}
       <Card>
         <SectionTitle icon="📋">All Scenarios</SectionTitle>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11,
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13,
           fontFamily: "Poppins,sans-serif" }}>
           <thead>
             <tr style={{ background: B.nightBlue, color: B.white }}>
-              {["Scenario", "Budget at Risk (before fix)", "Accts Expand (after fix)", "Growth (after fix)", "Churn Saved Q2", "Expansion Q2", "Total Q2"].map((h, i) => (
+              {["Scenario", "Budget at Risk (before deployment)", "Accts Expand (after deployment)", "Growth (after deployment)", "Rev Saved Q2", "Rev Expansion Q2", "Total Rev Saved Q2"].map((h, i) => (
                 <th key={h} style={{ padding: "7px 8px", textAlign: i === 0 ? "left" : "right",
-                  fontWeight: 600, fontSize: 10 }}>{h}</th>
+                  fontWeight: 600, fontSize: 13 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -560,11 +540,11 @@ function RTPanel({ scenario }) {
             })}
           </tbody>
         </table>
-        <div style={{ fontSize: 9, color: "#bbb", fontFamily: "Poppins,sans-serif", marginTop: 6 }}>
-          <div style={{ fontSize: 9, color: "#888", fontFamily: "Poppins,sans-serif", marginTop: 8, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 13, color: "#bbb", fontFamily: "Poppins,sans-serif", marginTop: 6 }}>
+          <div style={{ fontSize: 13, color: "#888", fontFamily: "Poppins,sans-serif", marginTop: 8, lineHeight: 1.6 }}>
             <span style={{ fontWeight: 700, color: B.livingCoral }}>Why does Best Case have the highest "at risk" %?</span>{" "}
             In the optimistic scenario we argue that <em>more</em> budget is currently at risk due to poor calibration —
-            meaning the fix saves more. Most Likely = conservative estimate of the problem size.
+            meaning the deployment saves more. Most Likely = conservative estimate of the problem size.
             Best Case = we believe the problem is larger, so the saving is larger.
             Adjust sliders above to simulate your own assumptions.
           </div>
@@ -576,7 +556,7 @@ function RTPanel({ scenario }) {
         <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
           {[["current", "Current RT (40)"], ["churned", "Churned Accounts (30)"]].map(([key, label]) => (
             <button key={key} onClick={() => setAccountsTab(key)} style={{
-              flex: 1, padding: "7px 6px", borderRadius: 8, cursor: "pointer", fontSize: 11,
+              flex: 1, padding: "7px 6px", borderRadius: 8, cursor: "pointer", fontSize: 13,
               border: `2px solid ${accountsTab === key ? B.nightBlue : B.silverLining}`,
               background: accountsTab === key ? B.nightBlue : B.white,
               color: accountsTab === key ? B.white : B.nightBlue,
@@ -591,31 +571,31 @@ function RTPanel({ scenario }) {
                 borderRadius: 10, padding: "8px 12px", borderLeft: `3px solid ${B.skyBlue}` }}>
                 <div style={{ fontSize: 14, fontWeight: 800, color: B.nightBlue,
                   fontFamily: "Poppins,sans-serif" }}>{fmt(TRAINED_DAILY)}/day</div>
-                <div style={{ fontSize: 10, color: "#666",
+                <div style={{ fontSize: 13, color: "#666",
                   fontFamily: "Poppins,sans-serif" }}>11 trained accounts</div>
               </div>
               <div style={{ flex: 1, minWidth: 100, background: B.livingCoral + "18",
                 borderRadius: 10, padding: "8px 12px", borderLeft: `3px solid ${B.livingCoral}` }}>
                 <div style={{ fontSize: 14, fontWeight: 800, color: B.nightBlue,
                   fontFamily: "Poppins,sans-serif" }}>{fmt(EXPLORATION_DAILY)}/day</div>
-                <div style={{ fontSize: 10, color: "#666",
+                <div style={{ fontSize: 13, color: "#666",
                   fontFamily: "Poppins,sans-serif" }}>29 cold-start accounts · {pct(EXPLORATION_DAILY, TOTAL_DAILY)} of budget</div>
               </div>
             </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: B.skyBlue,
-              fontFamily: "Poppins,sans-serif", marginBottom: 8 }}>✅ Trained on own data (6)</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: B.skyBlue,
+              fontFamily: "Poppins,sans-serif", marginBottom: 8 }}>✅ Trained on own data (11)</div>
             {OLD_TRAINED_ACCOUNTS.map(a => (
               <BarRow key={a.name} label={a.name} value={a.spend} max={MAX_SPEND}
                 color={B.skyBlue} badge={{ label: "trained", bg: B.skyBlue + "33", color: B.nightBlue }} />
             ))}
-            <div style={{ fontSize: 11, fontWeight: 700, color: B.livingCoral,
+            <div style={{ fontSize: 13, fontWeight: 700, color: B.livingCoral,
               fontFamily: "Poppins,sans-serif", margin: "16px 0 8px" }}>
               🔬 Cold-Start — model has never seen their data (34)
             </div>
             {NEW_EXPLORATION_ACCOUNTS.map(a => (
               <BarRow key={a.name} label={a.name} value={a.spend} max={MAX_SPEND}
                 color={B.livingCoral}
-                subLabel={`$${(a.spend * (churnRisk / 100) * (BASE_MARGIN_RATE / 100)).toFixed(0)}/day margin at risk`}
+                subLabel={`$${(a.spend * (churnRisk / 100) * (BASE_MARGIN_RATE / 100)).toFixed(0)}/day revenue at risk`}
                 badge={{ label: "cold-start", bg: B.livingCoral + "22", color: B.livingCoral }} />
             ))}
           </>
@@ -625,11 +605,11 @@ function RTPanel({ scenario }) {
           <>
             <div style={{ background: B.secureYellow + "33", borderRadius: 10,
               padding: "10px 14px", marginBottom: 12, borderLeft: `3px solid ${B.secureYellow}` }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: B.nightBlue,
+              <div style={{ fontSize: 13, fontWeight: 700, color: B.nightBlue,
                 fontFamily: "Poppins,sans-serif" }}>
                 30 churned accounts — were in the previous model training set but are no longer spending in RT
               </div>
-              <div style={{ fontSize: 10, color: "#666",
+              <div style={{ fontSize: 13, color: "#666",
                 fontFamily: "Poppins,sans-serif", marginTop: 2 }}>
                 Their data exists in the old model — calibration on them has no production impact.
                 The 29 cold-start accounts above are the real target.
@@ -640,9 +620,9 @@ function RTPanel({ scenario }) {
                 padding: "5px 0", borderBottom: `1px solid ${B.silverLining}33` }}>
                 <div style={{ width: 7, height: 7, borderRadius: 2,
                   background: B.silverLining, marginRight: 8, flexShrink: 0 }} />
-                <span style={{ fontSize: 10, color: "#aaa",
+                <span style={{ fontSize: 13, color: "#aaa",
                   fontFamily: "Poppins,sans-serif" }}>{a}</span>
-                <span style={{ marginLeft: "auto", fontSize: 9, background: "#f0f0f0",
+                <span style={{ marginLeft: "auto", fontSize: 13, background: "#f0f0f0",
                   color: "#bbb", borderRadius: 4, padding: "1px 6px",
                   fontFamily: "Poppins,sans-serif" }}>inactive</span>
               </div>
@@ -687,14 +667,14 @@ function PWBPanel({ scenario }) {
           <Pill label="of total RT spend on PWB exchanges"  value={pct(PWB_DAILY, TOTAL_DAILY)} color={B.livingCoral} />
           <Pill label="PWB exchange spend/day"              value={fmt(PWB_DAILY)}               color={B.livingCoral} />
           <Pill label="exchanges affected"                  value="3"                            color={B.skyBlue}     />
-          <Pill label="single model fix covers all three"   value="1 fix"                        color={B.surfGreen}   />
+          <Pill label="single deployment covers all three"   value="1 deployment"                        color={B.surfGreen}   />
         </div>
-        <div style={{ fontSize: 10, color: "#555", fontFamily: "Poppins,sans-serif",
+        <div style={{ fontSize: 13, color: "#555", fontFamily: "Poppins,sans-serif",
           lineHeight: 1.7, background: B.bg, borderRadius: 8, padding: "10px 12px" }}>
           <strong>The problem:</strong> Fyber, Unity, and Chartboost use PWB pricing.
           Mispriced bids cause two failure modes: overbidding burns client ROAS → budget cuts;
           underbidding loses auctions → reach drops → clients move budgets to AppLovin/Vungle.
-          One improved model fixes all three exchanges simultaneously.
+          One improved model covers all three exchanges simultaneously.
         </div>
       </Card>
 
@@ -706,7 +686,7 @@ function PWBPanel({ scenario }) {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
           <div style={{ paddingRight: 16, borderRight: `1px solid ${B.silverLining}44` }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#888",
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#888",
               fontFamily: "Poppins,sans-serif", marginBottom: 10,
               textTransform: "uppercase", letterSpacing: 1 }}>Assumptions</div>
             <SliderWithNote label="Bigabid margin rate" value={marginRate} min={10} max={60}
@@ -717,11 +697,11 @@ function PWBPanel({ scenario }) {
               note={`What % of the ${fmt(PWB_DAILY)}/day across Fyber, Unity, Chartboost is currently at risk — clients reducing or shifting budget because mispriced bids are hurting their ROAS.`} />
             <SliderWithNote label="% of pricing errors the new model resolves" value={pwbFix} min={10} max={100}
               unit="%" onChange={setPwbFix} accent={B.surfGreen} timing="quality"
-              note="How much of the mispricing does the new PWB iteration actually correct. 40% = conservative partial fix. 90% = near-complete correction." />
-            <SliderWithNote label="Budget growth on fixed exchanges" value={pwbExp} min={0} max={30}
+              note="How much of the mispricing does the new PWB iteration actually correct. 40% = conservative partial deployment. 90% = near-complete deployment." />
+            <SliderWithNote label="Budget growth on deployed exchanges" value={pwbExp} min={0} max={30}
               unit="%" onChange={setPwbExp} accent={B.skyBlue} timing="after"
               note="Once ROAS improves on Fyber/Unity/Chartboost, clients increase spend on those exchanges. % growth expected per exchange." />
-            <div style={{ fontSize: 9, fontWeight: 700, color: "#888",
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#888",
               fontFamily: "Poppins,sans-serif", marginTop: 10, marginBottom: 6,
               textTransform: "uppercase", letterSpacing: 1 }}>Known Error Rate Per Exchange</div>
             <SliderWithNote label="Fyber" value={errorRates.fyber} min={5} max={50}
@@ -735,7 +715,7 @@ function PWBPanel({ scenario }) {
               note="Current estimated pricing error rate on Chartboost." />
 
             <div style={{ background: B.bg, borderRadius: 8, padding: "10px 12px",
-              fontSize: 9, color: "#666", fontFamily: "Poppins,sans-serif",
+              fontSize: 13, color: "#666", fontFamily: "Poppins,sans-serif",
               lineHeight: 1.8, marginTop: 8 }}>
               <div><strong style={{ color: B.livingCoral }}>Protection:</strong>{" "}
                 exchange × {churnRisk}% risk × {pwbFix}% fixed × {marginRate}% × 90d</div>
@@ -745,17 +725,17 @@ function PWBPanel({ scenario }) {
           </div>
 
           <div style={{ paddingLeft: 16 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#888",
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#888",
               fontFamily: "Poppins,sans-serif", marginBottom: 10,
               textTransform: "uppercase", letterSpacing: 1 }}>Needle Movement</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {res.exchanges.map(ex => (
                 <Needle key={ex.name} value={ex.qtr} max={maxNeedle * 0.7}
                   label={`${ex.name.charAt(0).toUpperCase() + ex.name.slice(1)} Q2`}
-                  sublabel="margin $" color={ex.color} />
+                  sublabel="rev saved" color={ex.color} />
               ))}
               <Needle value={res.totalQtr} max={maxNeedle}
-                label="Total PWB Q2" sublabel="combined" color={B.nightBlue} />
+                label="Total PWB Q2" sublabel="rev saved" color={B.nightBlue} />
             </div>
           </div>
         </div>
@@ -764,7 +744,7 @@ function PWBPanel({ scenario }) {
       {/* Q2 result */}
       <div style={{ background: B.nightBlue, borderRadius: 14, padding: "18px 20px",
         marginBottom: 14 }}>
-        <div style={{ fontSize: 9, color: B.silverLining, fontFamily: "Poppins,sans-serif",
+        <div style={{ fontSize: 13, color: B.silverLining, fontFamily: "Poppins,sans-serif",
           textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>
           Q2 Bigabid Margin — PWB Exchanges
         </div>
@@ -776,7 +756,7 @@ function PWBPanel({ scenario }) {
               padding: "10px 14px", flex: 1, minWidth: 80 }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: ex.color,
                 fontFamily: "Poppins,sans-serif" }}>{fmtQ(ex.qtr)}</div>
-              <div style={{ fontSize: 9, color: B.silverLining,
+              <div style={{ fontSize: 13, color: B.silverLining,
                 fontFamily: "Poppins,sans-serif", marginTop: 2, textTransform: "capitalize" }}>{ex.name}</div>
             </div>
           ))}
@@ -791,20 +771,20 @@ function PWBPanel({ scenario }) {
             padding: "12px 14px", borderRadius: 10, marginBottom: 8,
             background: ex.color + "12", borderLeft: `3px solid ${ex.color}` }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: B.nightBlue,
+              <div style={{ fontSize: 13, fontWeight: 700, color: B.nightBlue,
                 fontFamily: "Poppins,sans-serif", textTransform: "capitalize",
                 marginBottom: 3 }}>{ex.name}</div>
-              <div style={{ fontSize: 9, color: "#777", fontFamily: "Poppins,sans-serif",
+              <div style={{ fontSize: 13, color: "#777", fontFamily: "Poppins,sans-serif",
                 lineHeight: 1.7 }}>
                 <div>{fmt(ex.spend)}/day spend · {ex.err}% pricing error rate</div>
                 <div>Protected: {fmt(ex.prot)}/day · Expansion: {fmt(ex.exp)}/day</div>
-                <div>Bigabid margin/day: <strong>{fmt(ex.margin)}</strong></div>
+                <div>Revenue saved/day: <strong>{fmt(ex.margin)}</strong></div>
               </div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: ex.color,
                 fontFamily: "Poppins,sans-serif" }}>{fmtQ(ex.qtr)}</div>
-              <div style={{ fontSize: 9, color: "#aaa",
+              <div style={{ fontSize: 13, color: "#aaa",
                 fontFamily: "Poppins,sans-serif" }}>Q2 margin</div>
             </div>
           </div>
@@ -812,13 +792,13 @@ function PWBPanel({ scenario }) {
 
         <div style={{ marginTop: 8 }}>
           <SectionTitle icon="📋">All Scenarios</SectionTitle>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11,
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13,
             fontFamily: "Poppins,sans-serif" }}>
             <thead>
               <tr style={{ background: B.nightBlue, color: B.white }}>
-                {["Scenario", "At Risk (before)", "Fix Quality", "Expansion (after)", "Fyber Q2", "Unity Q2", "Chartboost Q2", "Total Q2"].map((h, i) => (
+                {["Scenario", "At Risk (before deployment)", "Deployment Quality", "Expansion (after deployment)", "Fyber Q2", "Unity Q2", "Chartboost Q2", "Total Rev Saved Q2"].map((h, i) => (
                   <th key={h} style={{ padding: "7px 8px", textAlign: i === 0 ? "left" : "right",
-                    fontSize: 10, fontWeight: 600 }}>{h}</th>
+                    fontSize: 13, fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -850,7 +830,7 @@ function PWBPanel({ scenario }) {
       {/* Exchange budget breakdown */}
       <Card>
         <SectionTitle icon="💱">RT Budget by Exchange
-          <span style={{ fontSize: 10, fontWeight: 400, color: "#888", marginLeft: 6 }}>
+          <span style={{ fontSize: 13, fontWeight: 400, color: "#888", marginLeft: 6 }}>
             {fmt(TOTAL_DAILY)}/day total
           </span>
         </SectionTitle>
@@ -860,17 +840,17 @@ function PWBPanel({ scenario }) {
               alignItems: "center", marginBottom: 3 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                 <div style={{ width: 10, height: 10, borderRadius: 3, background: ex.color }} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: B.nightBlue,
+                <span style={{ fontSize: 13, fontWeight: 600, color: B.nightBlue,
                   fontFamily: "Poppins,sans-serif", textTransform: "capitalize" }}>{ex.name}</span>
                 {ex.pwb && (
-                  <span style={{ fontSize: 9, background: B.livingCoral + "22",
+                  <span style={{ fontSize: 13, background: B.livingCoral + "22",
                     color: B.livingCoral, borderRadius: 4, padding: "1px 6px",
                     fontWeight: 700, fontFamily: "Poppins,sans-serif" }}>PWB target</span>
                 )}
               </div>
               <div style={{ display: "flex", gap: 10 }}>
-                <span style={{ fontSize: 10, color: "#bbb" }}>{pct(ex.spend, TOTAL_DAILY)}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: B.nightBlue,
+                <span style={{ fontSize: 13, color: "#bbb" }}>{pct(ex.spend, TOTAL_DAILY)}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: B.nightBlue,
                   fontFamily: "Poppins,sans-serif" }}>{fmt(ex.spend)}</span>
               </div>
             </div>
@@ -886,7 +866,7 @@ function PWBPanel({ scenario }) {
 }
 
 // ── Main App ──────────────────────────────────────────────────────────────
-function NeedleSimulator() {
+export default function NeedleSimulator() {
   const [tab,      setTab]      = useState("rt");
   const [scenario, setScenario] = useState("mostLikely");
 
@@ -916,7 +896,7 @@ function NeedleSimulator() {
               textTransform: "lowercase",
             }}>bigabid</span>
             <span style={{
-              fontSize: 11, fontWeight: 800, color: B.livingCoral,
+              fontSize: 13, fontWeight: 800, color: B.livingCoral,
               fontFamily: "Poppins, sans-serif", letterSpacing: 3,
               textTransform: "uppercase",
             }}>Q2 · 2026</span>
@@ -929,7 +909,7 @@ function NeedleSimulator() {
               fontFamily: "Poppins, sans-serif", letterSpacing: -0.3,
             }}>Or Dahan</div>
             <div style={{
-              fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.4)",
+              fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.4)",
               fontFamily: "Poppins, sans-serif", marginTop: 2, letterSpacing: 0.3,
             }}>DS Product Manager</div>
           </div>
@@ -948,15 +928,14 @@ function NeedleSimulator() {
             <span style={{ color: B.skyBlue }}>Simulator</span>
           </div>
           <div style={{
-            fontSize: 11, color: "rgba(255,255,255,0.38)", fontWeight: 500,
+            fontSize: 13, color: "rgba(255,255,255,0.38)", fontWeight: 500,
             fontFamily: "Poppins, sans-serif", letterSpacing: 0.4,
           }}>
-            Bigabid margin $ · 40% base margin · 10% historical churn · Calibration only
+            Expected revenue saved · 40% Bigabid margin rate · 10% historical churn · Calibration only
           </div>
         </div>
       </div>
 
-      <ScenarioTabs value={scenario} onChange={setScenario} />
       <SummaryBanner
         rtQtr={rtRes.totalQtr}
         pwbQtr={pwbRes.totalQtr}
@@ -981,12 +960,12 @@ function NeedleSimulator() {
           }}>
             <div style={{ fontSize: 18, marginBottom: 4 }}>{icon}</div>
             <div style={{
-              fontSize: 13, fontWeight: 900, letterSpacing: -0.3,
+              fontSize: 15, fontWeight: 900, letterSpacing: -0.3,
               color: tab === key ? B.white : B.nightBlue,
               fontFamily: "Poppins, sans-serif",
             }}>{epic}</div>
             <div style={{
-              fontSize: 10, fontWeight: 500, marginTop: 2,
+              fontSize: 13, fontWeight: 500, marginTop: 2,
               color: tab === key ? "rgba(255,255,255,0.55)" : "#888",
               fontFamily: "Poppins, sans-serif",
             }}>{sub}</div>
@@ -1007,19 +986,13 @@ function NeedleSimulator() {
               fill="#B6D4FF" opacity="0.9"/>
             <path d="M26 24 L32 30 L28 24" fill="#92E3A9"/>
           </svg>
-          <span style={{ fontSize: 10, fontWeight: 800, color: B.white,
+          <span style={{ fontSize: 13, fontWeight: 800, color: B.white,
             fontFamily: "Poppins,sans-serif" }}>bigabid</span>
         </div>
-        <span style={{ fontSize: 10, color: "#bbb", fontFamily: "Poppins,sans-serif" }}>
+        <span style={{ fontSize: 13, color: "#bbb", fontFamily: "Poppins,sans-serif" }}>
           Q2 Impact Simulator · Made by <strong style={{ color: "#999" }}>Or Dahan</strong>, DS Product Manager
         </span>
       </div>
     </div>
   );
 }
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<NeedleSimulator />);
-  </script>
-</body>
-</html>
