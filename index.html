@@ -470,17 +470,75 @@ function RTPanel({ scenario }) {
               unit="%" onChange={setExpansionGrowth} accent={B.skyBlue} timing="after"
               note="By how much each upselling account grows their daily RT spend. e.g. 10% means a $10K/day account becomes $11K/day." />
 
-            {/* Live formula */}
-            <div style={{ background: B.bg, borderRadius: 8, padding: "10px 12px",
-              fontSize: 13, color: "#666", fontFamily: "Poppins,sans-serif",
-              lineHeight: 1.8, marginTop: 8 }}>
-              <div><strong style={{ color: B.surfGreen }}>Revenue saved (churn):</strong>{" "}
-                {fmt(EXPLORATION_DAILY)} × {churnRisk}% × 80% × {marginRate}% × 90d
-                {" = "}<strong>{fmtQ(res.churnQtr)}</strong>
+            {/* Live calculation breakdown */}
+            <div style={{ background: B.bg, borderRadius: 10, padding: "12px 14px",
+              fontSize: 13, fontFamily: "Poppins,sans-serif", marginTop: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#888", letterSpacing: 1.5,
+                textTransform: "uppercase", marginBottom: 10 }}>Live Calculation</div>
+
+              {/* Churn protection */}
+              <div style={{ marginBottom: 10, paddingBottom: 10,
+                borderBottom: `1px dashed ${B.silverLining}` }}>
+                <div style={{ fontWeight: 700, color: B.surfGreen, marginBottom: 6 }}>
+                  🛡️ Revenue saved from churn prevention
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "2px 8px",
+                  fontSize: 12, color: "#555" }}>
+                  <span>Cold-start daily spend</span>
+                  <span style={{ fontWeight: 700, color: B.nightBlue, textAlign: "right" }}>{fmt(EXPLORATION_DAILY)}/day</span>
+                  <span>× Budget at churn risk</span>
+                  <span style={{ fontWeight: 700, color: B.livingCoral, textAlign: "right" }}>× {churnRisk}%</span>
+                  <span>× Calibration impact ratio</span>
+                  <span style={{ fontWeight: 700, textAlign: "right" }}>× 80%</span>
+                  <span>× Bigabid margin rate</span>
+                  <span style={{ fontWeight: 700, textAlign: "right" }}>× {marginRate}%</span>
+                  <span>= Daily rev saved</span>
+                  <span style={{ fontWeight: 800, color: B.surfGreen, textAlign: "right" }}>= {fmt(res.churnMargin)}/day</span>
+                  <span>× Q2 duration</span>
+                  <span style={{ fontWeight: 700, textAlign: "right" }}>× 90 days</span>
+                </div>
+                <div style={{ marginTop: 6, background: B.surfGreen + "22", borderRadius: 6,
+                  padding: "5px 10px", display: "flex", justifyContent: "space-between",
+                  alignItems: "center" }}>
+                  <span style={{ fontSize: 12, color: "#444" }}>Q2 churn protection</span>
+                  <span style={{ fontSize: 16, fontWeight: 900, color: B.surfGreen }}>{fmtQ(res.churnQtr)}</span>
+                </div>
               </div>
-              <div><strong style={{ color: B.surfGreen }}>Expansion:</strong>{" "}
-                top {res.expandN} accts × +{expansionGrowth}% × {marginRate}% × 90d
-                {" = "}<strong>{fmtQ(res.expQtr)}</strong>
+
+              {/* Expansion */}
+              <div>
+                <div style={{ fontWeight: 700, color: B.skyBlue, marginBottom: 6 }}>
+                  📈 Revenue from budget expansion
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "2px 8px",
+                  fontSize: 12, color: "#555" }}>
+                  <span>Upselling accounts ({res.expandN} of 29)</span>
+                  <span style={{ fontWeight: 700, color: B.nightBlue, textAlign: "right" }}>{fmt(res.expandSpend)}/day</span>
+                  <span>× Spend increase per account</span>
+                  <span style={{ fontWeight: 700, color: B.skyBlue, textAlign: "right" }}>× {expansionGrowth}%</span>
+                  <span>× Bigabid margin rate</span>
+                  <span style={{ fontWeight: 700, textAlign: "right" }}>× {marginRate}%</span>
+                  <span>= Daily new revenue</span>
+                  <span style={{ fontWeight: 800, color: B.skyBlue, textAlign: "right" }}>= {fmt(res.expMargin)}/day</span>
+                  <span>× Q2 duration</span>
+                  <span style={{ fontWeight: 700, textAlign: "right" }}>× 90 days</span>
+                </div>
+                <div style={{ marginTop: 6, background: B.skyBlue + "33", borderRadius: 6,
+                  padding: "5px 10px", display: "flex", justifyContent: "space-between",
+                  alignItems: "center" }}>
+                  <span style={{ fontSize: 12, color: "#444" }}>Q2 expansion revenue</span>
+                  <span style={{ fontSize: 16, fontWeight: 900, color: "#1a6a9a" }}>{fmtQ(res.expQtr)}</span>
+                </div>
+              </div>
+
+              {/* Total */}
+              <div style={{ marginTop: 10, background: B.nightBlue, borderRadius: 8,
+                padding: "8px 12px", display: "flex", justifyContent: "space-between",
+                alignItems: "center" }}>
+                <span style={{ fontSize: 13, color: B.silverLining, fontWeight: 600 }}>
+                  Total Q2 ({fmtQ(res.churnQtr)} + {fmtQ(res.expQtr)})
+                </span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: B.white }}>{fmtQ(res.totalQtr)}</span>
               </div>
             </div>
           </div>
@@ -737,13 +795,55 @@ function PWBPanel({ scenario }) {
               unit="%" onChange={v => setErr("chartboost", v)} accent={B.surfGreen} timing="before"
               note="Current estimated pricing error rate on Chartboost." />
 
-            <div style={{ background: B.bg, borderRadius: 8, padding: "10px 12px",
-              fontSize: 13, color: "#666", fontFamily: "Poppins,sans-serif",
-              lineHeight: 1.8, marginTop: 8 }}>
-              <div><strong style={{ color: B.livingCoral }}>Protection:</strong>{" "}
-                exchange × {churnRisk}% risk × {pwbFix}% fixed × {marginRate}% × 90d</div>
-              <div><strong style={{ color: B.surfGreen }}>Expansion:</strong>{" "}
-                exchange × {pwbExp}% growth × {marginRate}% × 90d</div>
+            {/* Live calculation breakdown */}
+            <div style={{ background: B.bg, borderRadius: 10, padding: "12px 14px",
+              fontSize: 13, fontFamily: "Poppins,sans-serif", marginTop: 8 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#888", letterSpacing: 1.5,
+                textTransform: "uppercase", marginBottom: 10 }}>Live Calculation</div>
+
+              {/* Per exchange */}
+              {res.exchanges.map(ex => (
+                <div key={ex.name} style={{ marginBottom: 10, paddingBottom: 10,
+                  borderBottom: `1px dashed ${B.silverLining}` }}>
+                  <div style={{ fontWeight: 700, color: ex.color, marginBottom: 6,
+                    textTransform: "capitalize" }}>
+                    💱 {ex.name}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "2px 8px",
+                    fontSize: 12, color: "#555" }}>
+                    <span>Exchange daily spend</span>
+                    <span style={{ fontWeight: 700, color: B.nightBlue, textAlign: "right" }}>{fmt(ex.spend)}/day</span>
+                    <span>× Budget at risk (before deployment)</span>
+                    <span style={{ fontWeight: 700, color: B.livingCoral, textAlign: "right" }}>× {churnRisk}%</span>
+                    <span>× Deployment quality</span>
+                    <span style={{ fontWeight: 700, textAlign: "right" }}>× {pwbFix}%</span>
+                    <span>+ Budget expansion (after deployment)</span>
+                    <span style={{ fontWeight: 700, color: B.surfGreen, textAlign: "right" }}>+ {fmt(ex.exp)}/day</span>
+                    <span>× Bigabid margin rate</span>
+                    <span style={{ fontWeight: 700, textAlign: "right" }}>× {marginRate}%</span>
+                    <span>= Daily rev saved</span>
+                    <span style={{ fontWeight: 800, color: ex.color, textAlign: "right" }}>= {fmt(ex.margin)}/day</span>
+                    <span>× Q2 duration</span>
+                    <span style={{ fontWeight: 700, textAlign: "right" }}>× 90 days</span>
+                  </div>
+                  <div style={{ marginTop: 6, background: ex.color + "22", borderRadius: 6,
+                    padding: "5px 10px", display: "flex", justifyContent: "space-between",
+                    alignItems: "center" }}>
+                    <span style={{ fontSize: 12, color: "#444", textTransform: "capitalize" }}>Q2 — {ex.name}</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: ex.color }}>{fmtQ(ex.qtr)}</span>
+                  </div>
+                </div>
+              ))}
+
+              {/* Total */}
+              <div style={{ background: B.nightBlue, borderRadius: 8,
+                padding: "8px 12px", display: "flex", justifyContent: "space-between",
+                alignItems: "center" }}>
+                <span style={{ fontSize: 13, color: B.silverLining, fontWeight: 600 }}>
+                  Total Q2 (all 3 exchanges)
+                </span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: B.white }}>{fmtQ(res.totalQtr)}</span>
+              </div>
             </div>
           </div>
 
