@@ -114,52 +114,54 @@ const MAX_SPEND         = NEW_EXPLORATION_ACCOUNTS[0].spend;
 
 // ── Scenario defaults ─────────────────────────────────────────────────────
 const SCENARIO_DEFAULTS = {
-  mostLikely: { churnRisk: 10, expansionAccts: 15, expansionGrowth: 10, pwbFix: 40, pwbExp: 5  },
-  veryGood:   { churnRisk: 20, expansionAccts: 25, expansionGrowth: 20, pwbFix: 65, pwbExp: 12 },
-  bestCase:   { churnRisk: 30, expansionAccts: 40, expansionGrowth: 30, pwbFix: 90, pwbExp: 20 },
+  mostLikely: { churnRisk: 10, expansionAccts: 15, expansionGrowth: 10, overbidRate: 15, overbidReduction: 40 },
+  veryGood:   { churnRisk: 20, expansionAccts: 25, expansionGrowth: 20, overbidRate: 20, overbidReduction: 65 },
+  bestCase:   { churnRisk: 30, expansionAccts: 40, expansionGrowth: 30, overbidRate: 25, overbidReduction: 90 },
 };
 
 // ── Calculations ──────────────────────────────────────────────────────────
-// All $ = Bigabid margin, not gross spend
+// All $ = Bigabid expected revenue saved, not gross spend
 //
-// RT Calibration (Epic 5):
-//   Churn prevention: EXPLORATION_DAILY × churnRisk% × CALIB_RATIO × margin% × 90
-//   Budget expansion: top N exploration accounts × expansionGrowth% × margin% × 90
+// RT Calibration:
+//   Churn prevention: EXPLORATION_DAILY × churnRisk% × CALIB_RATIO × margin% × 30d
+//   Budget expansion: top N exploration accounts × expansionGrowth% × margin% × 30d
 //
-// PWB (Epic 7):
-//   Budget protection: exchange_spend × churnRisk% × pwbFix% × margin% × 90
-//   Budget expansion:  exchange_spend × pwbExp% × margin% × 90
+// PWB (per exchange — same logic as RT):
+//   Revenue protected: exchange_spend × pwbChurnRisk% × margin% × 30d
+//   Revenue expansion: exchange_spend × pwbExp% × margin% × 30d
 
 function calcRT(params, marginRate) {
   const m = marginRate / 100;
   const atRisk       = EXPLORATION_DAILY * (params.churnRisk / 100);
   const saved        = atRisk * CALIB_RATIO;
   const churnMargin  = saved * m;
-  const churnQtr     = churnMargin * 90;
+  const churnMo      = churnMargin * 30;
   const expandN      = Math.round(NEW_EXPLORATION_ACCOUNTS.length * (params.expansionAccts / 100));
   const expandSpend  = NEW_EXPLORATION_ACCOUNTS.slice(0, expandN).reduce((s, a) => s + a.spend, 0);
   const newSpend     = expandSpend * (params.expansionGrowth / 100);
   const expMargin    = newSpend * m;
-  const expQtr       = expMargin * 90;
+  const expMo        = expMargin * 30;
   return {
-    atRisk, saved, churnMargin, churnQtr,
-    expandN, expandSpend, newSpend, expMargin, expQtr,
+    atRisk, saved, churnMargin, churnMo,
+    expandN, expandSpend, newSpend, expMargin, expMo,
     totalDailyMargin: churnMargin + expMargin,
-    totalQtr: churnQtr + expQtr,
+    totalMo: churnMo + expMo,
   };
 }
 
-function calcPWB(params, errorRates, marginRate) {
-  const m = marginRate / 100;
+function calcPWB(params, marginRate) {
+  const m  = marginRate / 100;
+  const or = params.overbidRate      / 100;
+  const rd = params.overbidReduction / 100;
   const exchanges = EXCHANGE_DATA.filter(e => e.pwb).map(ex => {
-    const err   = errorRates[ex.name];
-    const prot  = ex.spend * (params.churnRisk / 100) * (params.pwbFix / 100);
-    const exp   = ex.spend * (params.pwbExp / 100);
-    const margin = (prot + exp) * m;
-    return { ...ex, err, prot, exp, margin, qtr: margin * 90 };
+    const currentOverbid = ex.spend * or;
+    const recovered      = currentOverbid * rd;
+    const dailyRev       = recovered * m;
+    const monthRev       = dailyRev * 30;
+    return { ...ex, currentOverbid, recovered, dailyRev, monthRev };
   });
-  const totalMargin = exchanges.reduce((s, e) => s + e.margin, 0);
-  return { exchanges, totalMargin, totalQtr: totalMargin * 90 };
+  const totalDaily = exchanges.reduce((s, e) => s + e.dailyRev, 0);
+  return { exchanges, totalDaily, totalMo: totalDaily * 30 };
 }
 
 // ── Formatters ────────────────────────────────────────────────────────────
@@ -366,27 +368,27 @@ function BarRow({ label, value, max, color, badge, subLabel }) {
 }
 
 // ── Summary Banner ────────────────────────────────────────────────────────
-function SummaryBanner({ rtQtr, pwbQtr, marginRate, scenario }) {
+function SummaryBanner({ rtMo, pwbMo, marginRate, scenario }) {
   const labels = { mostLikely: "Most Likely", veryGood: "Very Good", bestCase: "Best Case" };
   return (
     <div style={{ background: `linear-gradient(135deg, ${B.nightBlue}, #2A4A7A)`,
       borderRadius: 14, padding: "18px 20px", marginBottom: 18 }}>
       <div style={{ fontSize: 13, color: B.silverLining, fontFamily: "Poppins,sans-serif",
         letterSpacing: 2, textTransform: "uppercase", marginBottom: 4 }}>
-        Combined Q2 Expected Revenue Saved
+        Combined Monthly Expected Revenue Saved
       </div>
       <div style={{ fontSize: 36, fontWeight: 800, color: B.white,
-        fontFamily: "Poppins,sans-serif", marginBottom: 4 }}>{fmtQ(rtQtr + pwbQtr)}</div>
+        fontFamily: "Poppins,sans-serif", marginBottom: 4 }}>{fmtQ(rtMo + pwbMo)}</div>
       <div style={{ fontSize: 13, color: B.silverLining, fontFamily: "Poppins,sans-serif",
         marginBottom: 14 }}>
-        RT Calibration {fmtQ(rtQtr)} · PWB Exchanges {fmtQ(pwbQtr)}
+        RT Calibration {fmtQ(rtMo)} · ADX+AppLovin Proxy Exchanges {fmtQ(pwbMo)}
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {[
           { val: fmt(TOTAL_DAILY),              label: "RT Daily Spend",        color: B.surfGreen    },
           { val: fmt(TOTAL_DAILY * marginRate / 100), label: "Expected Revenue Saved/day", color: B.secureYellow },
           { val: "29 / 40",                     label: "Cold-Start Accounts",   color: B.livingCoral  },
-          { val: fmt(PWB_DAILY),                label: "PWB Exchange Spend/day",color: B.skyBlue      },
+          { val: fmt(PWB_DAILY),                label: "Proxy-priced exchange spend/day",color: B.skyBlue      },
         ].map(s => (
           <div key={s.label} style={{ background: "#ffffff15", borderRadius: 10,
             padding: "9px 12px", textAlign: "center", flex: 1, minWidth: 70 }}>
@@ -494,14 +496,14 @@ function RTPanel({ scenario }) {
                   <span style={{ fontWeight: 700, textAlign: "right" }}>× {marginRate}%</span>
                   <span>= Daily rev saved</span>
                   <span style={{ fontWeight: 800, color: B.surfGreen, textAlign: "right" }}>= {fmt(res.churnMargin)}/day</span>
-                  <span>× Q2 duration</span>
-                  <span style={{ fontWeight: 700, textAlign: "right" }}>× 90 days</span>
+                  <span>× Monthly duration</span>
+                  <span style={{ fontWeight: 700, textAlign: "right" }}>× 30 days</span>
                 </div>
                 <div style={{ marginTop: 6, background: B.surfGreen + "22", borderRadius: 6,
                   padding: "5px 10px", display: "flex", justifyContent: "space-between",
                   alignItems: "center" }}>
-                  <span style={{ fontSize: 12, color: "#444" }}>Q2 churn protection</span>
-                  <span style={{ fontSize: 16, fontWeight: 900, color: B.surfGreen }}>{fmtQ(res.churnQtr)}</span>
+                  <span style={{ fontSize: 12, color: "#444" }}>Monthly churn protection</span>
+                  <span style={{ fontSize: 16, fontWeight: 900, color: B.surfGreen }}>{fmtQ(res.churnMo)}</span>
                 </div>
               </div>
 
@@ -520,14 +522,14 @@ function RTPanel({ scenario }) {
                   <span style={{ fontWeight: 700, textAlign: "right" }}>× {marginRate}%</span>
                   <span>= Daily new revenue</span>
                   <span style={{ fontWeight: 800, color: B.skyBlue, textAlign: "right" }}>= {fmt(res.expMargin)}/day</span>
-                  <span>× Q2 duration</span>
-                  <span style={{ fontWeight: 700, textAlign: "right" }}>× 90 days</span>
+                  <span>× Monthly duration</span>
+                  <span style={{ fontWeight: 700, textAlign: "right" }}>× 30 days</span>
                 </div>
                 <div style={{ marginTop: 6, background: B.skyBlue + "33", borderRadius: 6,
                   padding: "5px 10px", display: "flex", justifyContent: "space-between",
                   alignItems: "center" }}>
-                  <span style={{ fontSize: 12, color: "#444" }}>Q2 expansion revenue</span>
-                  <span style={{ fontSize: 16, fontWeight: 900, color: "#1a6a9a" }}>{fmtQ(res.expQtr)}</span>
+                  <span style={{ fontSize: 12, color: "#444" }}>Monthly expansion revenue</span>
+                  <span style={{ fontSize: 16, fontWeight: 900, color: "#1a6a9a" }}>{fmtQ(res.expMo)}</span>
                 </div>
               </div>
 
@@ -536,9 +538,9 @@ function RTPanel({ scenario }) {
                 padding: "8px 12px", display: "flex", justifyContent: "space-between",
                 alignItems: "center" }}>
                 <span style={{ fontSize: 13, color: B.silverLining, fontWeight: 600 }}>
-                  Total Q2 ({fmtQ(res.churnQtr)} + {fmtQ(res.expQtr)})
+                  Total Monthly ({fmtQ(res.churnMo)} + {fmtQ(res.expMo)})
                 </span>
-                <span style={{ fontSize: 18, fontWeight: 900, color: B.white }}>{fmtQ(res.totalQtr)}</span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: B.white }}>{fmtQ(res.totalMo)}</span>
               </div>
             </div>
           </div>
@@ -549,9 +551,9 @@ function RTPanel({ scenario }) {
               fontFamily: "Poppins,sans-serif", marginBottom: 10,
               textTransform: "uppercase", letterSpacing: 1 }}>Needle Movement</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <Needle value={res.churnQtr}         max={maxNeedle * 0.7}  label="Rev Saved Q2"     sublabel="rev saved"  color={B.surfGreen}  />
-              <Needle value={res.expQtr}            max={maxNeedle * 0.5}  label="Rev Expansion Q2"       sublabel="rev saved"  color={B.surfGreen}    />
-              <Needle value={res.totalQtr}          max={maxNeedle}        label="Total Q2 Revenue Saved"    sublabel="rev saved"  color={B.nightBlue}    />
+              <Needle value={res.churnMo}         max={maxNeedle * 0.7}  label="Rev Saved/mo"     sublabel="rev saved"  color={B.surfGreen}  />
+              <Needle value={res.expMo}            max={maxNeedle * 0.5}  label="Expansion/mo"       sublabel="rev saved"  color={B.surfGreen}    />
+              <Needle value={res.totalMo}          max={maxNeedle}        label="Total Rev/mo"    sublabel="rev saved"  color={B.nightBlue}    />
             </div>
           </div>
         </div>
@@ -562,14 +564,14 @@ function RTPanel({ scenario }) {
         marginBottom: 14 }}>
         <div style={{ fontSize: 13, color: B.silverLining, fontFamily: "Poppins,sans-serif",
           textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>
-          Q2 Bigabid Margin — RT Calibration
+          Monthly Expected Revenue Saved — RT Calibration
         </div>
         <div style={{ fontSize: 38, fontWeight: 800, color: B.white,
-          fontFamily: "Poppins,sans-serif" }}>{fmtQ(res.totalQtr)}</div>
+          fontFamily: "Poppins,sans-serif" }}>{fmtQ(res.totalMo)}</div>
         <div style={{ display: "flex", gap: 12, marginTop: 10, flexWrap: "wrap" }}>
           {[
-            { val: fmtQ(res.churnQtr),  label: "Revenue protected from churn",  color: B.livingCoral  },
-            { val: fmtQ(res.expQtr),    label: "Revenue from expansion",   color: B.surfGreen    },
+            { val: fmtQ(res.churnMo),  label: "Protected from churn/mo",  color: B.livingCoral  },
+            { val: fmtQ(res.expMo),    label: "Expansion/mo",   color: B.surfGreen    },
             { val: fmt(res.totalDailyMargin), label: "Revenue Saved/day",  color: B.secureYellow },
           ].map(s => (
             <div key={s.label} style={{ background: "#ffffff12", borderRadius: 10,
@@ -583,7 +585,7 @@ function RTPanel({ scenario }) {
         </div>
         <div style={{ fontSize: 13, color: B.silverLining + "88",
           fontFamily: "Poppins,sans-serif", marginTop: 10 }}>
-          Gross spend equivalent ~{fmtQ(res.totalQtr / (marginRate / 100))} — but that's client $, not Bigabid's
+          Gross spend equivalent ~{fmtQ(res.totalMo / (marginRate / 100))} — but that's client $, not Bigabid's
         </div>
       </div>
 
@@ -594,7 +596,7 @@ function RTPanel({ scenario }) {
           fontFamily: "Poppins,sans-serif" }}>
           <thead>
             <tr style={{ background: B.nightBlue, color: B.white }}>
-              {["Scenario", "Budget at Risk (before deployment)", "Accts Expand (after deployment)", "Growth (after deployment)", "Rev Saved Q2", "Rev Expansion Q2", "Total Rev Saved Q2"].map((h, i) => (
+              {["Scenario", "Budget at Risk (before deployment)", "Accts Expand (after deployment)", "Growth (after deployment)", "Rev Saved/mo", "Expansion/mo", "Total Rev/mo"].map((h, i) => (
                 <th key={h} style={{ padding: "7px 8px", textAlign: i === 0 ? "left" : "right",
                   fontWeight: 600, fontSize: 13 }}>{h}</th>
               ))}
@@ -613,9 +615,9 @@ function RTPanel({ scenario }) {
                   <td style={{ padding: "7px 8px", textAlign: "right", color: B.livingCoral }}>{def.churnRisk}%</td>
                   <td style={{ padding: "7px 8px", textAlign: "right" }}>{def.expansionAccts}%</td>
                   <td style={{ padding: "7px 8px", textAlign: "right", color: B.surfGreen }}>+{def.expansionGrowth}%</td>
-                  <td style={{ padding: "7px 8px", textAlign: "right" }}>{fmtQ(r.churnQtr)}</td>
-                  <td style={{ padding: "7px 8px", textAlign: "right" }}>{fmtQ(r.expQtr)}</td>
-                  <td style={{ padding: "7px 8px", textAlign: "right", fontWeight: 700 }}>{fmtQ(r.totalQtr)}</td>
+                  <td style={{ padding: "7px 8px", textAlign: "right" }}>{fmtQ(r.churnMo)}</td>
+                  <td style={{ padding: "7px 8px", textAlign: "right" }}>{fmtQ(r.expMo)}</td>
+                  <td style={{ padding: "7px 8px", textAlign: "right", fontWeight: 700 }}>{fmtQ(r.totalMo)}</td>
                 </tr>
               );
             })}
@@ -625,7 +627,7 @@ function RTPanel({ scenario }) {
           <div style={{ fontSize: 13, color: "#888", fontFamily: "Poppins,sans-serif", marginTop: 8, lineHeight: 1.6 }}>
             <span style={{ fontWeight: 700, color: B.livingCoral }}>Why does Best Case have the highest "at risk" %?</span>{" "}
             In the optimistic scenario we argue that <em>more</em> budget is currently at risk due to poor calibration —
-            meaning the deployment saves more. Most Likely = conservative estimate of the problem size.
+            meaning the deployment saves more per month. Most Likely = conservative estimate of the problem size.
             Best Case = we believe the problem is larger, so the saving is larger.
             Adjust sliders above to simulate your own assumptions.
           </div>
@@ -718,44 +720,42 @@ function RTPanel({ scenario }) {
 // ── PWB Panel (Epic 7) ────────────────────────────────────────────────────
 function PWBPanel({ scenario }) {
   const def = SCENARIO_DEFAULTS[scenario];
-  const [marginRate, setMarginRate]   = useState(BASE_MARGIN_RATE);
-  const [churnRisk,  setChurnRisk]    = useState(def.churnRisk);
-  const [pwbFix,     setPwbFix]       = useState(def.pwbFix);
-  const [pwbExp,     setPwbExp]       = useState(def.pwbExp);
-  const [errorRates, setErrorRates]   = useState({ fyber: 22, unity: 18, chartboost: 18 });
-  const setErr = (name, val) => setErrorRates(prev => ({ ...prev, [name]: val }));
+  const [marginRate,       setMarginRate]       = useState(BASE_MARGIN_RATE);
+  const [overbidRate,      setOverbidRate]      = useState(def.overbidRate);
+  const [overbidReduction, setOverbidReduction] = useState(def.overbidReduction);
 
   const [prevScenario, setPrevScenario] = useState(scenario);
   if (scenario !== prevScenario) {
     setPrevScenario(scenario);
-    setChurnRisk(def.churnRisk);
-    setPwbFix(def.pwbFix);
-    setPwbExp(def.pwbExp);
+    setOverbidRate(def.overbidRate);
+    setOverbidReduction(def.overbidReduction);
   }
 
-  const params = { churnRisk, pwbFix, pwbExp };
-  const res    = calcPWB(params, errorRates, marginRate);
-  const maxNeedle = 400000;
+  const params = { overbidRate, overbidReduction };
+  const res    = calcPWB(params, marginRate);
+  const maxNeedle = 100000;
 
   return (
     <div>
       {/* Why this matters */}
       <Card style={{ borderLeft: `4px solid ${B.livingCoral}` }}>
-        <SectionTitle icon="⚡" sub="Pricing errors on 3 exchanges = mispriced bids → poor ROAS → clients shift budget away">
-          Why PWB Model moves the needle
+        <SectionTitle icon="⚡" sub="PWB uses ADX+AppLovin averages on Fyber/Unity/Chartboost → overbidding → margin bleed">
+          Why ADX+AppLovin Proxy Pricing moves the needle
         </SectionTitle>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-          <Pill label="of total RT spend on PWB exchanges"  value={pct(PWB_DAILY, TOTAL_DAILY)} color={B.livingCoral} />
-          <Pill label="PWB exchange spend/day"              value={fmt(PWB_DAILY)}               color={B.livingCoral} />
+          <Pill label="of RT spend on proxy-priced exchanges"  value={pct(PWB_DAILY, TOTAL_DAILY)} color={B.livingCoral} />
+          <Pill label="Proxy-priced exchange spend/day"              value={fmt(PWB_DAILY)}               color={B.livingCoral} />
           <Pill label="exchanges affected"                  value="3"                            color={B.skyBlue}     />
           <Pill label="single deployment covers all three"   value="1 deployment"                        color={B.surfGreen}   />
         </div>
         <div style={{ fontSize: 13, color: "#555", fontFamily: "Poppins,sans-serif",
           lineHeight: 1.7, background: B.bg, borderRadius: 8, padding: "10px 12px" }}>
-          <strong>The problem:</strong> Fyber, Unity, and Chartboost use PWB pricing.
-          Mispriced bids cause two failure modes: overbidding burns client ROAS → budget cuts;
-          underbidding loses auctions → reach drops → clients move budgets to AppLovin/Vungle.
-          One improved model covers all three exchanges simultaneously.
+          <strong>The problem:</strong> The PWB model prices Fyber, Unity and Chartboost using
+          a cumulative average from ADX + AppLovin — not real clearing prices from those exchanges.
+          When a user is worth $50 (utility model) and PWB says bid $30 based on ADX averages,
+          but the real Fyber clearing price is $15, we overpay by $15 on every won impression.
+          That $15 overbid comes directly out of Bigabid's margin.
+          Using real exchange clearing prices eliminates this waste across all 3 exchanges simultaneously.
         </div>
       </Card>
 
@@ -773,27 +773,12 @@ function PWBPanel({ scenario }) {
             <SliderWithNote label="Bigabid margin rate" value={marginRate} min={10} max={60}
               unit="%" onChange={setMarginRate} accent={B.nightBlue} timing="general"
               note="The % of client media spend Bigabid keeps as revenue. All $ outputs are this fraction of gross spend." />
-            <SliderWithNote label="PWB budget at churn risk" value={churnRisk} min={5} max={40}
-              unit="%" onChange={setChurnRisk} accent={B.livingCoral} timing="before"
-              note={`What % of the ${fmt(PWB_DAILY)}/day across Fyber, Unity, Chartboost is currently at risk — clients reducing or shifting budget because mispriced bids are hurting their ROAS.`} />
-            <SliderWithNote label="% of pricing errors the new model resolves" value={pwbFix} min={10} max={100}
-              unit="%" onChange={setPwbFix} accent={B.surfGreen} timing="quality"
-              note="How much of the mispricing does the new PWB iteration actually correct. 40% = conservative partial deployment. 90% = near-complete deployment." />
-            <SliderWithNote label="Budget growth on deployed exchanges" value={pwbExp} min={0} max={30}
-              unit="%" onChange={setPwbExp} accent={B.skyBlue} timing="after"
-              note="Once ROAS improves on Fyber/Unity/Chartboost, clients increase spend on those exchanges. % growth expected per exchange." />
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#888",
-              fontFamily: "Poppins,sans-serif", marginTop: 10, marginBottom: 6,
-              textTransform: "uppercase", letterSpacing: 1 }}>Known Error Rate Per Exchange</div>
-            <SliderWithNote label="Fyber" value={errorRates.fyber} min={5} max={50}
-              unit="%" onChange={v => setErr("fyber", v)} accent={B.livingCoral} timing="before"
-              note="Current estimated pricing error rate on Fyber — how often bids are mispriced today." />
-            <SliderWithNote label="Unity" value={errorRates.unity} min={5} max={50}
-              unit="%" onChange={v => setErr("unity", v)} accent={B.skyBlue} timing="before"
-              note="Current estimated pricing error rate on Unity." />
-            <SliderWithNote label="Chartboost" value={errorRates.chartboost} min={5} max={50}
-              unit="%" onChange={v => setErr("chartboost", v)} accent={B.surfGreen} timing="before"
-              note="Current estimated pricing error rate on Chartboost." />
+            <SliderWithNote label="Avg overbid rate on PWB exchanges" value={overbidRate} min={5} max={50}
+              unit="%" onChange={setOverbidRate} accent={B.livingCoral} timing="before"
+              note={`On Fyber, Unity & Chartboost, PWB uses ADX+AppLovin averages instead of real exchange clearing prices. This causes us to overbid — we win but pay more than needed, bleeding Bigabid margin. E.g. 15% means we overpay by 15% on every won impression across ${fmt(PWB_DAILY)}/day of spend.`} />
+            <SliderWithNote label="Overbid reduction after deployment" value={overbidReduction} min={10} max={100}
+              unit="%" onChange={setOverbidReduction} accent={B.surfGreen} timing="after"
+              note="How much the new PWB model (using real Fyber/Unity/Chartboost clearing prices) reduces the overbid. 40% = we correct 40% of the overbid gap. 90% = near-complete correction." />
 
             {/* Live calculation breakdown */}
             <div style={{ background: B.bg, borderRadius: 10, padding: "12px 14px",
@@ -813,24 +798,26 @@ function PWBPanel({ scenario }) {
                     fontSize: 12, color: "#555" }}>
                     <span>Exchange daily spend</span>
                     <span style={{ fontWeight: 700, color: B.nightBlue, textAlign: "right" }}>{fmt(ex.spend)}/day</span>
-                    <span>× Budget at risk (before deployment)</span>
-                    <span style={{ fontWeight: 700, color: B.livingCoral, textAlign: "right" }}>× {churnRisk}%</span>
-                    <span>× Deployment quality</span>
-                    <span style={{ fontWeight: 700, textAlign: "right" }}>× {pwbFix}%</span>
-                    <span>+ Budget expansion (after deployment)</span>
-                    <span style={{ fontWeight: 700, color: B.surfGreen, textAlign: "right" }}>+ {fmt(ex.exp)}/day</span>
+                    <span>× Avg overbid rate (before)</span>
+                    <span style={{ fontWeight: 700, color: B.livingCoral, textAlign: "right" }}>× {overbidRate}%</span>
+                    <span style={{ fontSize: 11, color: "#777" }}>= Current daily overbid waste</span>
+                    <span style={{ fontWeight: 700, color: B.livingCoral, textAlign: "right" }}>{fmt(ex.currentOverbid)}/day</span>
+                    <span>× Overbid reduction (after)</span>
+                    <span style={{ fontWeight: 700, color: B.surfGreen, textAlign: "right" }}>× {overbidReduction}%</span>
+                    <span style={{ fontSize: 11, color: "#777" }}>= Gross spend recovered</span>
+                    <span style={{ fontWeight: 700, textAlign: "right" }}>{fmt(ex.recovered)}/day</span>
                     <span>× Bigabid margin rate</span>
                     <span style={{ fontWeight: 700, textAlign: "right" }}>× {marginRate}%</span>
-                    <span>= Daily rev saved</span>
-                    <span style={{ fontWeight: 800, color: ex.color, textAlign: "right" }}>= {fmt(ex.margin)}/day</span>
-                    <span>× Q2 duration</span>
-                    <span style={{ fontWeight: 700, textAlign: "right" }}>× 90 days</span>
+                    <span>= Daily margin recovered</span>
+                    <span style={{ fontWeight: 800, color: ex.color, textAlign: "right" }}>= {fmt(ex.dailyRev)}/day</span>
+                    <span>× Monthly duration</span>
+                    <span style={{ fontWeight: 700, textAlign: "right" }}>× 30 days</span>
                   </div>
                   <div style={{ marginTop: 6, background: ex.color + "22", borderRadius: 6,
                     padding: "5px 10px", display: "flex", justifyContent: "space-between",
                     alignItems: "center" }}>
-                    <span style={{ fontSize: 12, color: "#444", textTransform: "capitalize" }}>Q2 — {ex.name}</span>
-                    <span style={{ fontSize: 16, fontWeight: 900, color: ex.color }}>{fmtQ(ex.qtr)}</span>
+                    <span style={{ fontSize: 12, color: "#444", textTransform: "capitalize" }}>Monthly — {ex.name}</span>
+                    <span style={{ fontSize: 16, fontWeight: 900, color: ex.color }}>{fmtQ(ex.monthRev)}</span>
                   </div>
                 </div>
               ))}
@@ -842,7 +829,7 @@ function PWBPanel({ scenario }) {
                 <span style={{ fontSize: 13, color: B.silverLining, fontWeight: 600 }}>
                   Total Q2 (all 3 exchanges)
                 </span>
-                <span style={{ fontSize: 18, fontWeight: 900, color: B.white }}>{fmtQ(res.totalQtr)}</span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: B.white }}>{fmtQ(res.totalMo)}</span>
               </div>
             </div>
           </div>
@@ -853,12 +840,12 @@ function PWBPanel({ scenario }) {
               textTransform: "uppercase", letterSpacing: 1 }}>Needle Movement</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {res.exchanges.map(ex => (
-                <Needle key={ex.name} value={ex.qtr} max={maxNeedle * 0.7}
-                  label={`${ex.name.charAt(0).toUpperCase() + ex.name.slice(1)} Q2`}
+                <Needle key={ex.name} value={ex.monthRev} max={maxNeedle * 0.7}
+                  label={`${ex.name.charAt(0).toUpperCase() + ex.name.slice(1)}/mo`}
                   sublabel="rev saved" color={ex.color} />
               ))}
-              <Needle value={res.totalQtr} max={maxNeedle}
-                label="Total PWB Q2" sublabel="rev saved" color={B.nightBlue} />
+              <Needle value={res.totalMo} max={maxNeedle}
+                label="Total proxy exchanges/mo" sublabel="rev saved" color={B.nightBlue} />
             </div>
           </div>
         </div>
@@ -869,16 +856,16 @@ function PWBPanel({ scenario }) {
         marginBottom: 14 }}>
         <div style={{ fontSize: 13, color: B.silverLining, fontFamily: "Poppins,sans-serif",
           textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>
-          Q2 Bigabid Margin — PWB Exchanges
+          Monthly Expected Revenue Saved — ADX+AppLovin Proxy Exchanges
         </div>
         <div style={{ fontSize: 38, fontWeight: 800, color: B.white,
-          fontFamily: "Poppins,sans-serif" }}>{fmtQ(res.totalQtr)}</div>
+          fontFamily: "Poppins,sans-serif" }}>{fmtQ(res.totalMo)}</div>
         <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
           {res.exchanges.map(ex => (
             <div key={ex.name} style={{ background: "#ffffff12", borderRadius: 10,
               padding: "10px 14px", flex: 1, minWidth: 80 }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: ex.color,
-                fontFamily: "Poppins,sans-serif" }}>{fmtQ(ex.qtr)}</div>
+                fontFamily: "Poppins,sans-serif" }}>{fmtQ(ex.monthRev)}</div>
               <div style={{ fontSize: 13, color: B.silverLining,
                 fontFamily: "Poppins,sans-serif", marginTop: 2, textTransform: "capitalize" }}>{ex.name}</div>
             </div>
@@ -899,16 +886,16 @@ function PWBPanel({ scenario }) {
                 marginBottom: 3 }}>{ex.name}</div>
               <div style={{ fontSize: 13, color: "#777", fontFamily: "Poppins,sans-serif",
                 lineHeight: 1.7 }}>
-                <div>{fmt(ex.spend)}/day spend · {ex.err}% pricing error rate</div>
-                <div>Protected: {fmt(ex.prot)}/day · Expansion: {fmt(ex.exp)}/day</div>
-                <div>Revenue saved/day: <strong>{fmt(ex.margin)}</strong></div>
+                <div>{fmt(ex.spend)}/day spend on this exchange</div>
+                <div>{fmt(ex.spend)}/day spend · Daily overbid waste: {fmt(ex.currentOverbid)} · Recovered: {fmt(ex.recovered)}/day</div>
+                <div>Revenue saved/day: <strong>{fmt(ex.dailyRev)}</strong></div>
               </div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: ex.color,
-                fontFamily: "Poppins,sans-serif" }}>{fmtQ(ex.qtr)}</div>
+                fontFamily: "Poppins,sans-serif" }}>{fmtQ(ex.monthRev)}</div>
               <div style={{ fontSize: 13, color: "#aaa",
-                fontFamily: "Poppins,sans-serif" }}>Q2 margin</div>
+                fontFamily: "Poppins,sans-serif" }}>Monthly rev saved</div>
             </div>
           </div>
         ))}
@@ -919,7 +906,7 @@ function PWBPanel({ scenario }) {
             fontFamily: "Poppins,sans-serif" }}>
             <thead>
               <tr style={{ background: B.nightBlue, color: B.white }}>
-                {["Scenario", "At Risk (before deployment)", "Deployment Quality", "Expansion (after deployment)", "Fyber Q2", "Unity Q2", "Chartboost Q2", "Total Rev Saved Q2"].map((h, i) => (
+                {["Scenario", "Overbid Rate", "Reduction After", "Fyber/mo", "Unity/mo", "Chartboost/mo", "Total/mo"].map((h, i) => (
                   <th key={h} style={{ padding: "7px 8px", textAlign: i === 0 ? "left" : "right",
                     fontSize: 13, fontWeight: 600 }}>{h}</th>
                 ))}
@@ -927,7 +914,7 @@ function PWBPanel({ scenario }) {
             </thead>
             <tbody>
               {Object.entries(SCENARIO_DEFAULTS).map(([sc, def], i) => {
-                const r = calcPWB(def, errorRates, marginRate);
+                const r = calcPWB(def, marginRate);
                 const active = sc === scenario;
                 const label = sc === "mostLikely" ? "Most Likely" : sc === "veryGood" ? "Very Good" : "Best Case";
                 return (
@@ -935,13 +922,12 @@ function PWBPanel({ scenario }) {
                     background: active ? B.livingCoral + "18" : i % 2 === 0 ? "#f8f8f8" : B.white,
                     fontWeight: active ? 700 : 400 }}>
                     <td style={{ padding: "7px 8px" }}>{label}{active ? " ◄" : ""}</td>
-                    <td style={{ padding: "7px 8px", textAlign: "right", color: B.livingCoral }}>{def.churnRisk}%</td>
-                    <td style={{ padding: "7px 8px", textAlign: "right" }}>{def.pwbFix}%</td>
-                    <td style={{ padding: "7px 8px", textAlign: "right", color: B.surfGreen }}>+{def.pwbExp}%</td>
+                    <td style={{ padding: "7px 8px", textAlign: "right", color: B.livingCoral }}>{def.overbidRate}%</td>
+                    <td style={{ padding: "7px 8px", textAlign: "right", color: B.surfGreen }}>{def.overbidReduction}%</td>
                     {r.exchanges.map(e => (
-                      <td key={e.name} style={{ padding: "7px 8px", textAlign: "right" }}>{fmtQ(e.qtr)}</td>
+                      <td key={e.name} style={{ padding: "7px 8px", textAlign: "right" }}>{fmtQ(e.monthRev)}</td>
                     ))}
-                    <td style={{ padding: "7px 8px", textAlign: "right", fontWeight: 700 }}>{fmtQ(r.totalQtr)}</td>
+                    <td style={{ padding: "7px 8px", textAlign: "right", fontWeight: 700 }}>{fmtQ(r.totalMo)}</td>
                   </tr>
                 );
               })}
@@ -995,7 +981,7 @@ function NeedleSimulator() {
 
   // Compute summary numbers for banner
   const rtRes  = calcRT(SCENARIO_DEFAULTS[scenario], BASE_MARGIN_RATE);
-  const pwbRes = calcPWB(SCENARIO_DEFAULTS[scenario], { fyber: 22, unity: 18, chartboost: 18 }, BASE_MARGIN_RATE);
+  const pwbRes = calcPWB(SCENARIO_DEFAULTS[scenario], BASE_MARGIN_RATE);
 
   return (
     <div style={{ background: B.bg, minHeight: "100vh", padding: "18px 14px",
@@ -1060,8 +1046,8 @@ function NeedleSimulator() {
       </div>
 
       <SummaryBanner
-        rtQtr={rtRes.totalQtr}
-        pwbQtr={pwbRes.totalQtr}
+        rtMo={rtRes.totalMo}
+        pwbMo={pwbRes.totalMo}
         marginRate={BASE_MARGIN_RATE}
         scenario={scenario}
       />
@@ -1069,7 +1055,7 @@ function NeedleSimulator() {
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
         {[
           ["rt",  "⚙️", "RT Calibration", "Cold-Start Accounts"],
-          ["pwb", "💱", "PWB Exchanges",   "Fyber · Unity · Chartboost"],
+          ["pwb", "💱", "Proxy-Priced Exchanges",   "Fyber · Unity · Chartboost"],
         ].map(([key, icon, epic, sub]) => (
           <button key={key} onClick={() => setTab(key)} style={{
             flex: 1, padding: "14px 10px", borderRadius: 14, cursor: "pointer",
